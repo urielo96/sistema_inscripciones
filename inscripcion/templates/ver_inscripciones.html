@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block body %}
+
+
+{% for inscripcion in inscripciones %}
+  <p>Asignatura: {{ inscripcion.asignatura.nombre }}</p>
+{% empty %}
+  <p>No hay inscripciones.</p>
+{% endfor %}
+
+  
+
+{% endblock body %}

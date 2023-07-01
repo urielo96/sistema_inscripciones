@@ -13,24 +13,26 @@ class Alumno(models.Model):
         ('M', 'Masculino'),
         ('O', 'Otro'),]
     genero = models.CharField(max_length=1, choices=genero) 
-    foto = models.ImageField(upload_to='fotos_alumnos/')
+    foto = models.ImageField(upload_to='fotos_alumnos/', null= True)
     
 
     def __str__(self):
         nombre_completo = "{0} {1} {2}"
-        return nombre_completo.format(self.nombre,self.apellido_paterno,self.apellido_materno)
+        return nombre_completo.format(self.numero_cuenta,self.nombre,self.apellido_paterno,self.apellido_materno)
+    
+    
     
     
 
 class Asignatura(models.Model):
     clave_asignatura = models.SmallIntegerField(primary_key=True)
     denominacion = models.CharField(max_length=80)
-    semestre = models.CharField(max_length=50)
+    semestre = models.PositiveIntegerField()
     creditos = models.PositiveIntegerField(default=None)
+  
     
     def __str__(self):
         return self.denominacion
-    
     
 
 
@@ -50,12 +52,11 @@ class Grupo(models.Model):
 class Inscripcion(models.Model):
     id = models.AutoField
     numero_cuenta = models.ForeignKey(Alumno, null=False, blank=False, on_delete=models.CASCADE)
-    asignatura = models.ForeignKey(Asignatura, on_delete=models.CASCADE)
-
+    asignatura =models.ManyToManyField(Asignatura)
+     
 
     def __str__(self):
         numero_de_cuenta = "{0}"
-        print(numero_de_cuenta)
         return numero_de_cuenta.format(self.numero_cuenta)
 
 
