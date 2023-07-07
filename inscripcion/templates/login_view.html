@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+
+  {% block body %}
+  
+  {% if error %}
+    <p> {{error}} </p>
+  {% endif %}
+
+<form method="POST">
+    {% csrf_token %}
+    <label for="numero_cuenta">Número de cuenta:</label>
+    <input type="text" name="numero_cuenta" required>
+
+    <label for="contraseña">Contraseña:</label>
+    <input type="password" name="password" required>
+
+    <button type="submit">Iniciar sesión</button>
+</form>
+{% endblock body %}
+</body>
+</html>
