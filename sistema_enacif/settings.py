@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'inscripcion',
+    'users'
     
 ]
 
@@ -129,6 +130,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-AUTH_USER_MODEL = 'inscripcion.Alumno'
+# Custom user model
+AUTH_USER_MODEL = "users.User"
 
 
