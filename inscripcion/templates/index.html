@@ -10,9 +10,19 @@
     <div class="d-flex align-items-center justify-content-center">
     <h1>Sistema de Inscripciones ENaCIF</h1>
     </div>
-  
+    {% if user.is_authenticated %}
+        <h3>Bienvenido {{user.first_name}} {{user.last_name}}</h3>
+    {% endif %}
 
-{% endblock  %}
+    <p>Tu semestre actual es : {{user.semestre_actual}}</p>
+
+        {% for curso in cursos_listados %}
+        <p>{{curso}}  {{curso.semestre}}</p>
+        
+    {% endfor %}
+
+    
+{% endblock body %}
 
 
 

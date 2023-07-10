@@ -18,7 +18,7 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path,include
-
+from users.views import logout_users
 
 
 
@@ -26,6 +26,7 @@ urlpatterns = [
     path('',include('inscripcion.urls')),
     path('users/',include('users.urls')),
     path('users/', include('django.contrib.auth.urls')),
+    path('logout/',logout_users, name = 'logout'),
     path('admin/', admin.site.urls)
 
 

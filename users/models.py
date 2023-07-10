@@ -10,4 +10,4 @@ class User(AbstractUser):
     
 
     def __str__(self):
-        return self.numero_cuenta
+        return f'{self.first_name},{self.numero_cuenta}'

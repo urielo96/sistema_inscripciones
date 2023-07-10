@@ -19,5 +19,9 @@ def login_users(request):
 
     return render(request, 'authenticate/login_view.html', {'messages': messages.get_messages(request)})
 
+def logout_users(request):
+    logout(request)
+    # Lógica adicional después del cierre de sesión
+    return redirect('login')
 
 

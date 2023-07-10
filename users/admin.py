@@ -12,7 +12,7 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('numero_cuenta','password1', 'password2','semestre_actual'),
+            'fields': ('username','numero_cuenta','password1', 'password2','semestre_actual'),
         }),
     )
     list_display = ('username', 'email', 'first_name', 'last_name', 'numero_cuenta', 'semestre_actual', 'is_staff')
