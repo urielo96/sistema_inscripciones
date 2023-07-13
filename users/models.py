@@ -3,7 +3,18 @@ from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
     numero_cuenta = models.CharField(max_length=9, unique=True, null=False)
-    semestre_actual = models.IntegerField(null=True)
+    opciones = (
+        (1, 'Primer Semestre'),
+        (2, 'Segundo Semestre'),
+        (3, 'Tercer Semestre'),
+        (4, 'Cuarto Semestre'),
+        (5, 'Quinto Semestre'),
+        (6, 'Sexto Semestre'),
+        (7, 'Séptimo Semestre'),
+        (8, 'Octavo Semestre'),
+        (9, 'Noveno Semestre'),
+    )
+    semestre_actual = models.IntegerField(choices=opciones)
     USERNAME_FIELD = 'numero_cuenta'
     REQUIRED_FIELDS = ['username','password']
 

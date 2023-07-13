@@ -5,8 +5,21 @@ from users.models import User
 class Asignatura(models.Model):
     clave_asignatura = models.SmallIntegerField(primary_key=True)
     denominacion = models.CharField(max_length=80)
-    semestre = models.PositiveSmallIntegerField()
+    opciones = (
+        (1, 'Primer Semestre'),
+        (2, 'Segundo Semestre'),
+        (3, 'Tercer Semestre'),
+        (4, 'Cuarto Semestre'),
+        (5, 'Quinto Semestre'),
+        (6, 'Sexto Semestre'),
+        (7, 'Séptimo Semestre'),
+        (8, 'Octavo Semestre'),
+        (9, 'Noveno Semestre'),
+    )
+    semestre = models.PositiveSmallIntegerField(choices= opciones)
 
+    class Meta:
+        ordering = ['semestre']
     def __str__(self):
         return self.denominacion
 
@@ -29,6 +42,11 @@ class Inscripcion(models.Model):
                                          related_name='alumno')
     asignatura = models.ManyToManyField(Asignatura, blank=False)
 
+    class Meta:
+        verbose_name = 'Inscripcion'
+        verbose_name_plural = 'Inscripciones'
+
+
     def __str__(self):
-        numero_de_cuenta = "{0}"
-        return numero_de_cuenta.format(self.numero_cuenta)
+        return str(self.numero_cuenta)
+        

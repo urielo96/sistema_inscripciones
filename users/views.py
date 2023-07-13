@@ -38,7 +38,7 @@ def login_users(request):
 def logout_users(request):
     logout(request)
     # Lógica adicional después del cierre de sesión
-    return redirect('index')
+    return redirect('login')
 
 
 def es_administrador(user):
