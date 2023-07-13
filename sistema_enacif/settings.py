@@ -80,8 +80,13 @@ WSGI_APPLICATION = 'sistema_enacif.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'inscripciones_enacif',
+        'USER': 'root',
+        'PASSWORD': 'toor',
+        'HOST': 'localhost',
+        'PORT': '3306',
+       
     }
 }
 
@@ -108,7 +113,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es-mx'
 
 TIME_ZONE = 'America/Mexico_City'
 
@@ -132,5 +137,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Custom user model
 AUTH_USER_MODEL = "users.User"
+
+#
+LOGIN_REDIRECT_URL = 'users/login'
+LOGOUT_REDIRECT_URL = 'users/login'
 
 

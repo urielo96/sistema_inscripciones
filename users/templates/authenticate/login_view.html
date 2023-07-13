@@ -2,36 +2,33 @@
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    {% block body %}
+      {% if messages %}
+        <div class="alert alert-danger" role="alert">
+          {% for message in messages %}
+            {{ message }}
+          {% endfor %}
+        </div>
+      {% endif %}
 
-  {% block body %}
-  
-  {% if messages %}
-  <div class="alert alert-danger" role="alert">
-      {% for message in messages %}
-          {{ message }}
-      {% endfor %}
-  </div>
-{% endif %}
+      <!-- Resto del contenido del template -->
 
-<!-- Resto del contenido del template -->
+      <form method="POST">
+        {% csrf_token %}
+        <label for="numero_cuenta">Número de cuenta:</label>
+        <input type="text" name="numero_cuenta" required />
 
+        <label for="contraseña">Contraseña:</label>
+        <input type="password" name="password" required />
 
-<form method="POST">
-    {% csrf_token %}
-    <label for="numero_cuenta">Número de cuenta:</label>
-    <input type="text" name="numero_cuenta" required>
-
-    <label for="contraseña">Contraseña:</label>
-    <input type="password" name="password" required>
-
-    <button type="submit">Iniciar sesión</button>
-</form>
-{% endblock body %}
-</body>
+        <button type="submit">Iniciar sesión</button>
+      </form>
+    {% endblock %}
+  </body>
 </html>

@@ -1,26 +1,104 @@
 {% extends 'base.html' %}
-
-{% block title %}Inscripciones ENaCif{% endblock title %}Inscripciones ENaCif
-
-
-<div class="d-flex align-items-center justify-content-center">
-    
-    
+{% block title %}Sistema de Inscripciones ENaCif{% endblock title %}Inscripciones ENaCif
 {% block body %}
+    <br>
+    
     <div class="d-flex align-items-center justify-content-center">
     <h1>Sistema de Inscripciones ENaCIF</h1>
     </div>
+    <br>
+
     {% if user.is_authenticated %}
-        <h3>Bienvenido {{user.first_name}} {{user.last_name}}</h3>
+        <h3>Bienvenid@ {{user.first_name}} {{user.last_name}}</h3>
     {% endif %}
-
-    <p>Tu semestre actual es : {{user.semestre_actual}}</p>
-
-        {% for curso in cursos_listados %}
-        <p>{{curso}}  {{curso.semestre}}</p>
+    
+    <div class="card">
+        <div class="card-header">
+            Lista de Asignaturas que el alumno puede inscribir:
+        </div>
         
-    {% endfor %}
+        <div class="card-body">
+            <h4 class="card-title">Asignaturas a Inscribir</h4>
+            <div class="table-responsive">
+                <table class="table table-primary">
+                    <thead>
+                        <tr>
+                            <th scope="col">Clave</th>
+                            <th scope="col">Denominacion</th>
+                            <th scope="col">Semestre</th>
+                            <th scope="col">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for curso in cursos_listados %}
+                        {% if curso not in asignaturas_inscritas %}
+                        <tr class="">
+                            <td scope="row">{{curso.clave_asignatura}}</td>
+                            <td>{{curso.denominacion}}</td>
+                            <td>{{curso.semestre}}</td>
+                            <td>
+            <form method="post" action="{% url 'inscribir_asignatura' %}">
+            {% csrf_token %}
+            <input type="hidden" name="asignatura_id" value="{{ curso.clave_asignatura }}">
+            <button type="submit" class="btn btn-primary">Inscribir</button>
+          </form>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+        </div>
+        <div class="card-footer text-muted">
+            Footer
+        </div>
+    </div>
 
+    {% comment %} Inicio de la Segunda Lista {% endcomment %}
+    <div class="card">
+        <div class="card-header">
+            
+        </div>
+        <div class="card-body">
+            <h4 class="card-title">Asignaturas Inscritas</h4>
+            <div class="table-responsive">
+                <table class="table table-primary">
+                    <thead>
+                        <tr>
+                            <th scope="col">Clave</th>
+                            <th scope="col">Denominacion</th>
+                            <th scope="col">Semestre</th>
+                            <th scope="col">Accion</th>
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for asignatura in asignaturas_inscritas %}
+                        <tr class="">
+                            <td scope="row">{{asignatura.clave_asignatura}}</td>
+                            <td>{{asignatura.denominacion}}</td>
+                            <td>{{asignatura.semestre}}</td>
+                            <td>
+                                <form method="post" action="{% url 'eliminar_asignatura' asignatura.clave_asignatura %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                                  </form>
+                                  
+                            </td>
+                            
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+        </div>
+        <div class="card-footer text-muted">
+            Footer
+        </div>
+    </div>
     
 {% endblock body %}
 
