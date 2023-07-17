@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<h1>Selecciona un grupo:</h1>
+<form method="GET" action="{% url 'usuarios_inscritos_grupo' %}">
+    <select name="grupo">
+        <option value="">Seleccione un grupo</option>
+        {% for grupo in grupos %}
+            <option value="{{ grupo.clave_grupo }}" {% if grupo_seleccionado and grupo_seleccionado.clave_grupo == grupo.clave_grupo %}selected{% endif %}>{{ grupo.clave_grupo }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Mostrar Alumnos Inscritos</button>
+</form>
+
+{% if grupo_seleccionado %}
+    <h2>Alumnos inscritos al grupo {{ grupo_seleccionado.clave_grupo }}:</h2>
+    {% for asignatura in usuario.alumno.asignatura.all %}
+                    
+        <p>{{ asignatura.clave_asignatura }} - {{ asignatura.denominacion }}</p>
+                   
+        {% endfor %}
+    <table class="table table-bordered">
+        
+        <thead>
+            <tr>
+                <th>Número de Cuenta</th>
+                <th>Nombre</th>
+                <th>Grupo</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for usuario in usuarios %}
+                <tr>
+                    <td>{{ usuario.numero_cuenta }}</td>
+                    <td>{{ usuario.first_name }} {{ usuario.last_name }}</td>
+                    <td>{{ grupo_seleccionado.clave_grupo }}</td>
+                </tr>
+                
+            {% empty %}
+                <tr>
+                    <td colspan="3">No hay usuarios inscritos en este grupo</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <h2>Asignaturas del grupo {{ grupo_seleccionado.clave_grupo }}:</h2>
+    <ul>
+        {% for asignatura in grupo_seleccionado.asignaturas.all %}
+            <li>{{ asignatura.clave_asignatura }} - {{ asignatura.denominacion }}</li>
+            <li>{% if grupo_seleccionado.clave_grupo %}
+                <form action="{% url 'generar_archivo_txt' grupo_seleccionado.clave_grupo %}?asignatura={{ asignatura.clave_asignatura }}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">Generar Archivo</button>
+                  </form>
+                {% endif %}</li>
+        {% empty %}
+            <li>No hay asignaturas en este grupo</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+{% endblock body %}
+

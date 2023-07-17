@@ -138,8 +138,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Custom user model
 AUTH_USER_MODEL = "users.User"
 
+SESSION_COOKIE_AGE = 120  # 1800 segundos = 30 minutos
+
+# Opcionalmente, puedes establecer SESSION_EXPIRE_AT_BROWSER_CLOSE a True
+# para que la sesión expire cuando el navegador se cierre
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 
 LOGIN_REDIRECT_URL = 'login'
 LOGOUT_REDIRECT_URL = 'login'
+
+# settings.py
 
 

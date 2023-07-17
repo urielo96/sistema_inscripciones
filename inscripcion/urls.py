@@ -9,5 +9,7 @@ urlpatterns = [
     path('eliminar_asignatura/<int:asignatura_id>/',
          views.eliminar_asignatura, name='eliminar_asignatura'),
        
+    path('grupos/',views.usuarios_inscritos_grupo, name='usuarios_inscritos_grupo'),
+   path('generar_archivo_txt/<int:grupo_clave>/', views.generar_archivo_txt, name='generar_archivo_txt'),
 
 ]

@@ -26,10 +26,22 @@ class Asignatura(models.Model):
 
 class Grupo(models.Model):
     clave_grupo = models.SmallIntegerField(primary_key=True)
-    descripcion = models.CharField(max_length=100)
+    opciones = (
+        (1, 'Primer Semestre'),
+        (2, 'Segundo Semestre'),
+        (3, 'Tercer Semestre'),
+        (4, 'Cuarto Semestre'),
+        (5, 'Quinto Semestre'),
+        (6, 'Sexto Semestre'),
+        (7, 'Séptimo Semestre'),
+        (8, 'Octavo Semestre'),
+        (9, 'Noveno Semestre'),
+    )
+    semestre = models.PositiveSmallIntegerField(choices= opciones)
     asignaturas = models.ManyToManyField(
         Asignatura,
         related_name='asignaturas')
+ 
 
     def __str__(self):
         return str(self.clave_grupo)
