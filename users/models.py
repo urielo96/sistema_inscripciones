@@ -14,7 +14,7 @@ class User(AbstractUser):
         (8, 'Octavo Semestre'),
         (9, 'Noveno Semestre'),
     )
-    semestre_actual = models.IntegerField(choices=opciones)
+    semestre_actual = models.IntegerField(choices=opciones, default=1)
     USERNAME_FIELD = 'numero_cuenta'
     REQUIRED_FIELDS = ['username','password']
 

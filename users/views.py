@@ -11,6 +11,11 @@ from django.core.exceptions import ObjectDoesNotExist
 from inscripcion.models import Inscripcion
 
 
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
+
 def login_users(request):
     if request.method == 'POST':
         numero_cuenta = request.POST['numero_cuenta']
@@ -27,6 +32,10 @@ def login_users(request):
                 # Si no existe la instancia de Inscripcion, crearla
                 inscripcion = Inscripcion(numero_cuenta=user)
                 inscripcion.save()
+
+            # Verificar si el usuario es administrativo
+            if user.groups.filter(name='Administrativos').exists():
+                return redirect('usuarios_inscritos_grupo')
 
             return redirect('index')
         else:

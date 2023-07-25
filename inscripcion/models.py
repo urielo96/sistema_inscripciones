@@ -5,7 +5,14 @@ from users.models import User
 class Asignatura(models.Model):
     clave_asignatura = models.SmallIntegerField(primary_key=True)
     denominacion = models.CharField(max_length=80)
+    
+    options = ((1,'Obligatoria'),
+             (2,'Optativa'))
+    
+    caracter = models.PositiveSmallIntegerField(choices= options, default = 1)
+
     opciones = (
+        (0, 'Optativa'),
         (1, 'Primer Semestre'),
         (2, 'Segundo Semestre'),
         (3, 'Tercer Semestre'),
@@ -14,10 +21,17 @@ class Asignatura(models.Model):
         (6, 'Sexto Semestre'),
         (7, 'Séptimo Semestre'),
         (8, 'Octavo Semestre'),
-        (9, 'Noveno Semestre'),
+        
     )
-    semestre = models.PositiveSmallIntegerField(choices= opciones)
-
+    semestre = models.PositiveSmallIntegerField(choices= opciones, default = 1)
+    opciones_eje = ((1,'A'),
+                    (2,'B'),
+                    (3,'M'),
+                    (4,'T')
+                    )
+    creditos = models.PositiveSmallIntegerField(default=0)
+    eje = models.PositiveSmallIntegerField(choices= opciones_eje, default = 1)
+  
     class Meta:
         ordering = ['semestre']
     def __str__(self):

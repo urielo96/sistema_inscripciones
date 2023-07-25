@@ -1,3 +1,6 @@
+from django.http import HttpResponse
+from django.urls import reverse
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
@@ -6,42 +9,54 @@ from django.db import IntegrityError
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from users.models import User
-from inscripcion.models import Asignatura, Inscripcion , Grupo
+from inscripcion.models import Asignatura, Inscripcion, Grupo
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import user_passes_test
 from django.views import View
+from django.db.models import Q
 
 
 from django.http import FileResponse
 from django.template.loader import render_to_string
 from django.utils.text import slugify
 
+
 def user_authenticated(user):
     return user.is_authenticated
 
-@user_passes_test(user_authenticated, login_url='/users/login')
+
+def is_alumno(user):
+    return user.is_authenticated and user.groups.filter(name='Alumnos').exists()
+
+
+@login_required
+@user_passes_test(is_alumno, login_url='/users/login')
 def index(request):
     # Obtener el alumno actualmente autenticado desde la sesión
     alumno = request.user
     usuario = request.user
     numero_cuenta = alumno.numero_cuenta
     # Obtener el semestre actual del alumno
-    
+
     semestre_actual = alumno.semestre_actual
     alumno = User.objects.get(numero_cuenta=numero_cuenta)
     asignaturas_inscritas = usuario.alumno.asignatura.all()
 
     # Obtener todos los cursos que pertenecen al semestre actual del alumno
-    cursos_listados = Asignatura.objects.filter(semestre=semestre_actual)
+
+    cursos_listados = Asignatura.objects.filter(
+        Q(semestre=semestre_actual) | Q(semestre=0))
     return render(request, "index.html", context={
         'cursos_listados': cursos_listados,
-        'asignaturas_inscritas': asignaturas_inscritas
+        'asignaturas_inscritas': asignaturas_inscritas,
     })
 
+
 def redirect_to_login_if_expired(view_func):
-    decorated_view_func = user_passes_test(user_authenticated, login_url='/users/login')(view_func)
-    
+    decorated_view_func = user_passes_test(
+        user_authenticated, login_url='/users/login')(view_func)
+
     def wrapper(request, *args, **kwargs):
         if request.user.is_authenticated and request.session.get_expiry_age() <= 0:
             return redirect('/users/login')
@@ -49,8 +64,10 @@ def redirect_to_login_if_expired(view_func):
 
     return wrapper
 
+
 index = redirect_to_login_if_expired(index)
 
+@login_required
 def inscribir_asignatura(request):
     if request.method == 'POST':
         asignatura_id = request.POST.get('asignatura_id')
@@ -69,7 +86,7 @@ def inscribir_asignatura(request):
 
         return redirect('index')
 
-
+@login_required
 def eliminar_asignatura(request, asignatura_id):
     if request.method == 'POST':
         # Obtener el usuario actualmente autenticado
@@ -90,16 +107,27 @@ def eliminar_asignatura(request, asignatura_id):
     return redirect('index')
 
 
+
+def is_administrativo(user):
+    return user.is_authenticated and user.groups.filter(name='Administrativos').exists()
+
+
+@login_required
+@user_passes_test(is_administrativo, login_url='/inscripcion/grupos')
 def usuarios_inscritos_grupo(request):
     grupos = Grupo.objects.all()
     grupo_seleccionado = None
     usuarios_inscritos = []
 
-    if 'grupo' in request.GET:
-        grupo_clave = int(request.GET['grupo'])
-        grupo_seleccionado = Grupo.objects.get(clave_grupo=grupo_clave)
-        asignaturas_grupo = grupo_seleccionado.asignaturas.all()
-        usuarios_inscritos = User.objects.filter(alumno__asignatura__in=asignaturas_grupo).distinct()
+    grupo_clave_str = request.GET.get('grupo', '')  # Obtener el valor del parámetro 'grupo' con un valor predeterminado de ''
+    if grupo_clave_str:
+        try:
+            grupo_clave = int(grupo_clave_str)
+            grupo_seleccionado = Grupo.objects.get(clave_grupo=grupo_clave)
+            asignaturas_grupo = grupo_seleccionado.asignaturas.all()
+            usuarios_inscritos = User.objects.filter(alumno__asignatura__in=asignaturas_grupo).distinct()
+        except (ValueError, Grupo.DoesNotExist):
+            grupo_seleccionado = None  # Manejar el caso en que el grupo no existe o el valor no es un entero válido
 
     context = {
         'grupos': grupos,
@@ -109,21 +137,22 @@ def usuarios_inscritos_grupo(request):
 
     return render(request, 'usuarios_inscritos_grupo.html', context)
 
-
-
-from django.http import HttpResponse
-
-
+@login_required
 def generar_archivo_txt(request, grupo_clave):
     grupo_seleccionado = Grupo.objects.get(clave_grupo=grupo_clave)
-    clave_asignatura = request.GET.get('asignatura')  # Obtenemos la clave de la asignatura de los parámetros de la URL
-    asignatura_especifica = grupo_seleccionado.asignaturas.get(clave_asignatura=clave_asignatura)
-    usuarios_inscritos = User.objects.filter(alumno__asignatura=asignatura_especifica).distinct()
+    # Obtenemos la clave de la asignatura de los parámetros de la URL
+    clave_asignatura = request.GET.get('asignatura')
+    asignatura_especifica = grupo_seleccionado.asignaturas.get(
+        clave_asignatura=clave_asignatura)
+    usuarios_inscritos = User.objects.filter(
+        alumno__asignatura=asignatura_especifica).distinct()
 
     contenido = ""
 
     for usuario in usuarios_inscritos:
-        linea = f"{usuario.numero_cuenta}0723{grupo_seleccionado.clave_grupo}{asignatura_especifica.clave_asignatura}A\n"
+        # Aseguramos que la clave de la asignatura tenga siempre 4 dígitos con ceros a la izquierda
+        clave_asignatura_padded = str(asignatura_especifica.clave_asignatura).zfill(4)
+        linea = f"{usuario.numero_cuenta}2253{clave_asignatura_padded}{grupo_seleccionado.clave_grupo}A\n"
         contenido += linea
 
     response = HttpResponse(content_type='text/plain')
@@ -131,6 +160,3 @@ def generar_archivo_txt(request, grupo_clave):
     response.write(contenido)
 
     return response
-
-
-
