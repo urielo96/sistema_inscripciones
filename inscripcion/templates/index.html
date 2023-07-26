@@ -1,66 +1,20 @@
 {% extends 'base.html' %}
-{% block title %}Sistema de Inscripciones ENaCif{% endblock title %}Inscripciones ENaCif
+{% block title %}Sistema de Inscripciones ENaCif{% endblock title %}
+
 {% block body %}
     <br>
-    
     <div class="d-flex align-items-center justify-content-center">
-    <h1>Sistema de Inscripciones ENaCIF</h1>
+        <h1>Sistema de Inscripciones ENaCIF</h1>
     </div>
     <br>
 
     {% if user.is_authenticated %}
         <h3>Bienvenid@ {{user.first_name}} {{user.last_name}}</h3>
     {% endif %}
-    
-    <div class="card">
         
-        <div class="card-header">
-            Lista de Asignaturas que el alumno puede inscribir:
-        </div>
-        
-        <div class="card-body">
-            <h4 class="card-title">Asignaturas a Inscribir</h4>
-            <div class="table-responsive">
-                <table class="table table-primary">
-                    <thead>
-                        <tr>
-                            <th scope="col">Clave</th>
-                            <th scope="col">Denominacion</th>
-                            <th scope="col">Semestre</th>
-                            <th scope="col">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for curso in cursos_listados %}
-                        {% if curso not in asignaturas_inscritas %}
-                        <tr class="">
-                            <td scope="row">{{curso.clave_asignatura}}</td>
-                            <td>{{curso.denominacion}}</td>
-                            <td>{{curso.semestre}}</td>
-                            <td>
-            <form method="post" action="{% url 'inscribir_asignatura' %}">
-            {% csrf_token %}
-            <input type="hidden" name="asignatura_id" value="{{ curso.clave_asignatura }}">
-            <button type="submit" class="btn btn-primary">Inscribir</button>
-          </form>
-                            </td>
-                        </tr>
-                        {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            
-        </div>
-        <div class="card-footer text-muted">
-            ENaCIF
-        </div>
-    </div>
-
-    {% comment %} Inicio de la Segunda Lista {% endcomment %}
     <div class="card">
         <div class="card-header">
-            
+            Lista de Asignaturas Inscritas
         </div>
         <div class="card-body">
             <h4 class="card-title">Asignaturas Inscritas</h4>
@@ -70,40 +24,51 @@
                         <tr>
                             <th scope="col">Clave</th>
                             <th scope="col">Denominacion</th>
-                            <th scope="col">Semestre</th>
-                            <th scope="col">Accion</th>
-                            
+                            <th scope="col">Creditos</th>
+                            <th scope="col">Carácter</th>
+                            <th scope="col">Grupo</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for asignatura in asignaturas_inscritas %}
                         <tr class="">
-                            <td scope="row">{{asignatura.clave_asignatura}}</td>
+                            <td scope="row">{% if asignatura.clave_asignatura|length < 4 %}0{% endif %}{{ asignatura.clave_asignatura }}</td>
+
                             <td>{{asignatura.denominacion}}</td>
-                            <td>{{asignatura.semestre}}</td>
+                            <td>{{asignatura.creditos}}</td>
+                            <td>{{asignatura.get_caracter_display }}</td>
                             <td>
-                                <form method="post" action="{% url 'eliminar_asignatura' asignatura.clave_asignatura %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-danger">Eliminar</button>
-                                  </form>
-                                  
+                                {% for grupo in asignatura.grupos.all %}
+                                {{ grupo.get_semestre_display }} - Grupo {{ grupo.clave_grupo }}
+                                {% if not forloop.last %}, {% endif %}
+                                {% endfor %}
                             </td>
-                            
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-            
-        </div>
-        <div class="card-footer text-muted">
-            ENaCIF
+            <button id="btnAceptar" class="btn btn-primary">Aceptar</button>
+            <div id="comprobante" style="display: none;">
+                <!-- ... -->
+<form method="post" action="{% url 'generar_comprobante' alumno_id=user.numero_cuenta %}">
+    {% csrf_token %}
+    <input type="hidden" name="alumno_id" value="{{ user.numero_cuenta }}">
+    <button type="submit" class="btn btn-secondary">Generar Comprobante</button>
+</form>
+<!-- ... -->
+
+            </div>
         </div>
     </div>
-    
+    <div class="card-footer text-muted">
+        ENaCIF
+    </div>
+
+    <script>
+        document.getElementById('btnAceptar').addEventListener('click', function() {
+            document.getElementById('btnAceptar').style.display = 'none';
+            document.getElementById('comprobante').style.display = 'block';
+        });
+    </script>
 {% endblock body %}
-
-
-
-
-</div>

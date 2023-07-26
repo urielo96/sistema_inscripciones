@@ -15,7 +15,10 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import user_passes_test
 from django.views import View
 from django.db.models import Q
-
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.platypus import Image
+from django.templatetags.static import static
+from datetime import datetime
 
 from django.http import FileResponse
 from django.template.loader import render_to_string
@@ -42,7 +45,7 @@ def index(request):
     semestre_actual = alumno.semestre_actual
     alumno = User.objects.get(numero_cuenta=numero_cuenta)
     asignaturas_inscritas = usuario.alumno.asignatura.all()
-
+    mostrar_boton_comprobante = False
     # Obtener todos los cursos que pertenecen al semestre actual del alumno
 
     cursos_listados = Asignatura.objects.filter(
@@ -50,6 +53,7 @@ def index(request):
     return render(request, "index.html", context={
         'cursos_listados': cursos_listados,
         'asignaturas_inscritas': asignaturas_inscritas,
+        'mostrar_boton_comprobante': mostrar_boton_comprobante,
     })
 
 
@@ -159,4 +163,180 @@ def generar_archivo_txt(request, grupo_clave):
     response['Content-Disposition'] = 'attachment; filename="alumnos_grupo.txt"'
     response.write(contenido)
 
+    return response
+
+
+
+from django.shortcuts import render
+from django.http import HttpResponse
+from reportlab.pdfgen import canvas
+from io import BytesIO
+from reportlab.lib.pagesizes import letter
+from django.conf import settings
+from reportlab.lib import utils
+import os
+from reportlab.platypus import SimpleDocTemplate, Image, Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
+from reportlab.platypus import Image
+from io import BytesIO
+import os
+from django.conf import settings
+from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+from .models import Asignatura
+
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Image
+from io import BytesIO
+import os
+from django.conf import settings
+from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+from .models import Asignatura
+
+@login_required
+def generar_comprobante(request, alumno_id):
+    try:
+        alumno_info = User.objects.get(numero_cuenta=alumno_id)
+    except User.DoesNotExist:
+        return HttpResponse("Alumno no encontrado", status=404)
+
+    asignaturas_inscritas = Asignatura.objects.filter(inscripcion__numero_cuenta=alumno_info)
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+
+    # Obtener la ruta local de la imagen a la izquierda
+    image_path_left = os.path.join(settings.BASE_DIR, 'static', 'img', 'logolcf.png')
+
+    # Cargar la imagen a la izquierda
+    logo_left = Image(image_path_left, width=60, height=70)
+    logo_left.hAlign = 'LEFT'  # Alineamos la imagen a la izquierda
+
+   
+
+    image_path_right = os.path.join(settings.BASE_DIR, 'static', 'img', 'unam_logo_azul.png')
+
+    # Cargar la imagen a la derecha
+    logo_right = Image(image_path_right, width=60, height=70)
+    logo_right.hAlign = 'RIGHT'  # Alineamos la imagen a la derecha
+
+    
+
+    # Agregar párrafos de texto en el encabezado del PDF
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=getSampleStyleSheet()['Title'],
+        fontName='Helvetica-Bold',
+        alignment=1,  # 0=Left, 1=Center, 2=Right
+        fontSize=10
+    )
+    title_styles = ParagraphStyle(
+        'TitleStyles',
+        parent=getSampleStyleSheet()['Title'],
+        fontName='Helvetica-Bold',
+        alignment=1,  # 0=Left, 1=Center, 2=Right
+        fontSize=11
+    )
+    datas = [
+        [
+            logo_left,  # Logotipo izquierdo
+            Paragraph("UNIVERSIDAD NACIONAL AUTONOMA DE MEXICO<br/>ESCUELA NACIONAL DE CIENCIAS FORENSES,<br/>SECRETARIA DE SERVICIOS ESCOLARES", title_styles),
+            logo_right,  # Logotipo derecho
+
+        ]
+    ]
+    table = Table(datas, colWidths=[60, 300, 60])
+    
+    table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 5),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+        ('LINEBELOW', (0, 0), (-1, 0), 1, colors.black),
+    ]))
+    elements.append(table)
+
+    # Agregar título "Comprobante de Inscripción"
+    title = Paragraph("Comprobante de Inscripción", title_style)
+    elements.append(title)
+
+    # Crear una tabla para mostrar los elementos en la misma línea
+    styles = getSampleStyleSheet()
+    data = [
+    [
+        Paragraph("<b>Nombre del alumno:</b>", styles['Normal']),
+        Paragraph(f"{alumno_info.first_name} {alumno_info.last_name}", styles['Normal']),
+    ],
+    [
+        Paragraph("<b>Número de cuenta:</b>", styles['Normal']),
+        Paragraph(f"{alumno_info.numero_cuenta}", styles['Normal']),
+    ],
+    [
+        Paragraph("<b>Plan:</b>", styles['Normal']),
+        Paragraph("2253", styles['Normal']),  # Aquí puedes poner el valor del plan si es dinámico
+    ],
+    [
+        Paragraph("<b>Periodo:</b>", styles['Normal']),
+        Paragraph("2024-1", styles['Normal']),  # Aquí puedes poner el valor del periodo si es dinámico
+    ],
+]
+    table = Table(data, colWidths=None)
+    
+    table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, 0), 1, colors.black),  # Borde en la fila superior
+        ('GRID', (0, 0), (0, 0), 1, colors.black),  # Borde izquierdo de la tabla superior
+        ('GRID', (-1, 0), (-1, 0), 1, colors.black),  # Borde derecho de la tabla superior
+        ('LINEBELOW', (0, 0), (-1, 0), 1, colors.black),
+    ]))
+    elements.append(table)
+    elements.append(Paragraph(" ", title_style))
+    elements.append(Paragraph(" ", title_style))
+
+    data = [["Clave", "Nombre", "Creditos"]]
+    for asignatura in asignaturas_inscritas:
+        data.append([str(asignatura.clave_asignatura).zfill(4), asignatura.denominacion, asignatura.creditos])
+
+    table = Table(data, colWidths=None)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.white),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+
+    elements.append(table)
+      # Obtener la fecha y hora actual
+    now = datetime.now()
+    formatted_date = now.strftime("%Y-%m-%d %H:%M:%S")
+
+    # Agregar la fecha y hora al PDF
+    date_paragraph = Paragraph(f"<b>Fecha y hora de consulta:</b> {formatted_date}", styles['Normal'])
+    elements.append(date_paragraph)
+
+
+    doc.build(elements)
+
+  
+    # Obtener el contenido del PDF generado
+    pdf_content = buffer.getvalue()
+    buffer.close()
+
+    # Devolver el contenido del PDF en la respuesta HTTP
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="comprobante.pdf"'
+    response.write(pdf_content)
     return response

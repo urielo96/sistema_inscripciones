@@ -10,7 +10,9 @@ class Asignatura(models.Model):
              (2,'Optativa'))
     
     caracter = models.PositiveSmallIntegerField(choices= options, default = 1)
-
+    
+    def get_caracter_display(self):
+        return dict(self.options).get(self.caracter, '')
     opciones = (
         (0, 'Optativa'),
         (1, 'Primer Semestre'),
