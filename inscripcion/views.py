@@ -297,7 +297,7 @@ def generar_comprobante(request, alumno_id):
         ('GRID', (0, 0), (-1, 0), 1, colors.black),  # Borde en la fila superior
         ('GRID', (0, 0), (0, 0), 1, colors.black),  # Borde izquierdo de la tabla superior
         ('GRID', (-1, 0), (-1, 0), 1, colors.black),  # Borde derecho de la tabla superior
-        ('LINEBELOW', (0, 0), (-1, 0), 1, colors.black),
+        
     ]))
     elements.append(table)
     elements.append(Paragraph(" ", title_style))
@@ -316,9 +316,13 @@ def generar_comprobante(request, alumno_id):
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
         ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
         ('GRID', (0, 0), (-1, -1), 1, colors.black)
-    ]))
-
+        ]))
+    
+    # Asignar el ancho calculado a la tabla
+    
     elements.append(table)
+
+    
       # Obtener la fecha y hora actual
     now = datetime.now()
     formatted_date = now.strftime("%Y-%m-%d %H:%M:%S")

@@ -17,7 +17,10 @@ class User(AbstractUser):
     semestre_actual = models.IntegerField(choices=opciones, default=1)
     USERNAME_FIELD = 'numero_cuenta'
     REQUIRED_FIELDS = ['username','password']
-
+    
+    class Meta:
+        verbose_name = 'Alumnos'
+        verbose_name_plural = 'Alumnos'
     
 
     def __str__(self):

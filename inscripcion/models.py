@@ -35,9 +35,9 @@ class Asignatura(models.Model):
     eje = models.PositiveSmallIntegerField(choices= opciones_eje, default = 1)
   
     class Meta:
-        ordering = ['semestre']
+        ordering = ['semestre', 'clave_asignatura']
     def __str__(self):
-        return self.denominacion
+        return f"{self.clave_asignatura} - {self.denominacion}"
 
 
 class Grupo(models.Model):
