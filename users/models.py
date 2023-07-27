@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
-    numero_cuenta = models.CharField(max_length=9, unique=True, null=False)
+    numero_cuenta = models.CharField(max_length=10, unique=True, null=False)
     opciones = (
         (1, 'Primer Semestre'),
         (2, 'Segundo Semestre'),

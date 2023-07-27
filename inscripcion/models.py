@@ -64,7 +64,7 @@ class Grupo(models.Model):
 
 
 class Inscripcion(models.Model):
-    id = models.AutoField
+    id = models.AutoField(primary_key=True)
     numero_cuenta = models.OneToOneField(User,
                                          on_delete=models.CASCADE,
                                          related_name='alumno')
@@ -73,7 +73,7 @@ class Inscripcion(models.Model):
     class Meta:
         verbose_name = 'Inscripcion'
         verbose_name_plural = 'Inscripciones'
-
+      
 
     def __str__(self):
         return str(self.numero_cuenta)
