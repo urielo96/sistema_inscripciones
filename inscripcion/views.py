@@ -19,6 +19,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.platypus import Image
 from django.templatetags.static import static
 from datetime import datetime
+import qrcode
 
 from django.http import FileResponse
 from django.template.loader import render_to_string
@@ -38,18 +39,20 @@ def is_alumno(user):
 def index(request):
     # Obtener el alumno actualmente autenticado desde la sesión
     alumno = request.user
-    usuario = request.user
     numero_cuenta = alumno.numero_cuenta
+    
     # Obtener el semestre actual del alumno
-
     semestre_actual = alumno.semestre_actual
-    alumno = User.objects.get(numero_cuenta=numero_cuenta)
-    asignaturas_inscritas = usuario.alumno.asignatura.all()
-    mostrar_boton_comprobante = False
+    
+    # Obtener las asignaturas inscritas del usuario actual
+    asignaturas_inscritas = alumno.alumno.asignatura.all()
+    
     # Obtener todos los cursos que pertenecen al semestre actual del alumno
-
     cursos_listados = Asignatura.objects.filter(
         Q(semestre=semestre_actual) | Q(semestre=0))
+    
+    mostrar_boton_comprobante = False
+
     return render(request, "index.html", context={
         'cursos_listados': cursos_listados,
         'asignaturas_inscritas': asignaturas_inscritas,
@@ -156,7 +159,8 @@ def generar_archivo_txt(request, grupo_clave):
     for usuario in usuarios_inscritos:
         # Aseguramos que la clave de la asignatura tenga siempre 4 dígitos con ceros a la izquierda
         clave_asignatura_padded = str(asignatura_especifica.clave_asignatura).zfill(4)
-        linea = f"{usuario.numero_cuenta}2253{clave_asignatura_padded}{grupo_seleccionado.clave_grupo}A\n"
+        clave_grupo_padded = str(grupo_seleccionado.clave_grupo).zfill(4)
+        linea = f"{usuario.numero_cuenta}2253{clave_asignatura_padded}{clave_grupo_padded}A\n"
         contenido += linea
 
     response = HttpResponse(content_type='text/plain')
@@ -207,8 +211,12 @@ def generar_comprobante(request, alumno_id):
         alumno_info = User.objects.get(numero_cuenta=alumno_id)
     except User.DoesNotExist:
         return HttpResponse("Alumno no encontrado", status=404)
+    
 
     asignaturas_inscritas = Asignatura.objects.filter(inscripcion__numero_cuenta=alumno_info)
+
+    
+
 
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
@@ -218,7 +226,7 @@ def generar_comprobante(request, alumno_id):
     image_path_left = os.path.join(settings.BASE_DIR, 'static', 'img', 'logolcf.png')
 
     # Cargar la imagen a la izquierda
-    logo_left = Image(image_path_left, width=60, height=70)
+    logo_left = Image(image_path_left, width=50, height=70)
     logo_left.hAlign = 'LEFT'  # Alineamos la imagen a la izquierda
 
    
@@ -249,7 +257,7 @@ def generar_comprobante(request, alumno_id):
     datas = [
         [
             logo_left,  # Logotipo izquierdo
-            Paragraph("UNIVERSIDAD NACIONAL AUTONOMA DE MEXICO<br/>ESCUELA NACIONAL DE CIENCIAS FORENSES,<br/>SECRETARIA DE SERVICIOS ESCOLARES", title_styles),
+            Paragraph("UNIVERSIDAD NACIONAL AUTÓNOMA DE MÉXICO<br/>ESCUELA NACIONAL DE CIENCIAS FORENSES<br/>SECRETARÍA DE SERVICIOS ESCOLARES", title_styles),
             logo_right,  # Logotipo derecho
 
         ]
@@ -266,6 +274,9 @@ def generar_comprobante(request, alumno_id):
     elements.append(table)
 
     # Agregar título "Comprobante de Inscripción"
+    elements.append(Paragraph(" ", title_style))
+    elements.append(Paragraph(" ", title_style))
+    
     title = Paragraph("Comprobante de Inscripción", title_style)
     elements.append(title)
 
@@ -286,35 +297,37 @@ def generar_comprobante(request, alumno_id):
     ],
     [
         Paragraph("<b>Periodo:</b>", styles['Normal']),
-        Paragraph("2024-1", styles['Normal']),  # Aquí puedes poner el valor del periodo si es dinámico
+        Paragraph("2025-1", styles['Normal']),  # Aquí puedes poner el valor del periodo si es dinámico
+    ],
+    [
+        Paragraph("<b>Semestre:</b>", styles['Normal']),
+        Paragraph(f"{alumno_info.semestre_actual}", styles['Normal']),  # Aquí puedes poner el valor del periodo si es dinámico
     ],
 ]
-    table = Table(data, colWidths=None)
+    table = Table(data, colWidths=[210,210])
     
     table.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('GRID', (0, 0), (-1, 0), 1, colors.black),  # Borde en la fila superior
-        ('GRID', (0, 0), (0, 0), 1, colors.black),  # Borde izquierdo de la tabla superior
-        ('GRID', (-1, 0), (-1, 0), 1, colors.black),  # Borde derecho de la tabla superior
         
     ]))
+
+    
     elements.append(table)
     elements.append(Paragraph(" ", title_style))
     elements.append(Paragraph(" ", title_style))
 
-    data = [["Clave", "Nombre", "Creditos"]]
+    data = [["Clave", "Denominación", "Créditos"]]
     for asignatura in asignaturas_inscritas:
         data.append([str(asignatura.clave_asignatura).zfill(4), asignatura.denominacion, asignatura.creditos])
 
-    table = Table(data, colWidths=None)
+    table = Table(data, colWidths=[60,300,60])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.white),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
         ('GRID', (0, 0), (-1, -1), 1, colors.black)
         ]))
     
@@ -325,12 +338,65 @@ def generar_comprobante(request, alumno_id):
     
       # Obtener la fecha y hora actual
     now = datetime.now()
+    elements.append(Paragraph(" ", title_style))
+    elements.append(Paragraph(" ", title_style))
     formatted_date = now.strftime("%Y-%m-%d %H:%M:%S")
 
+    
+    # Crear el estilo para el párrafo de la fecha y hora
+    date_style = ParagraphStyle(
+    'DateStyle',
+    parent=getSampleStyleSheet()['Normal'],
+    fontName='Helvetica',
+    leftIndent=20  # Agregamos el margen izquierdo de 20 puntos
+)
+
     # Agregar la fecha y hora al PDF
-    date_paragraph = Paragraph(f"<b>Fecha y hora de consulta:</b> {formatted_date}", styles['Normal'])
+    date_paragraph = Paragraph(f"<b>Fecha y hora de consulta:</b> {formatted_date}", date_style)
+    date_paragraph.leftIndent = 100
     elements.append(date_paragraph)
 
+   # ... (resto de tu código)
+
+# Crear el código QR con la información del alumno y la URL de la vista de validación
+    validation_url = reverse('validacion_alumno', args=[alumno_info.numero_cuenta])
+    qr_data =f"{request.build_absolute_uri(validation_url)}"
+
+
+    # ... (resto de tu código)
+
+
+    # Agregar título "Código QR"
+    elements.append(Paragraph(" ", title_style))
+    elements.append(Paragraph(" ", title_style))
+    
+    qr_title = Paragraph("ESCUELA NACIONAL DE CIENCIAS FORENSES", title_style)
+    elements.append(qr_title)
+
+    # Crear código QR
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(qr_data)
+    qr.make(fit=True)
+
+    # Crear una imagen del código QR
+    qr_image = qr.make_image(fill_color="black", back_color="white")
+    
+    # Guardar la imagen del código QR en un buffer
+    qr_image_buffer = BytesIO()
+    qr_image.save(qr_image_buffer)
+    
+    # Regresar al inicio del buffer antes de escribir
+    qr_image_buffer.seek(0)
+    
+    # Crear la imagen del código QR para reportlab
+    qr_code = Image(qr_image_buffer, width=100, height=100)
+    qr_code.hAlign = 'CENTER'
+    elements.append(qr_code)
 
     doc.build(elements)
 
@@ -341,6 +407,18 @@ def generar_comprobante(request, alumno_id):
 
     # Devolver el contenido del PDF en la respuesta HTTP
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="comprobante.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="Comprobante-{alumno_info.numero_cuenta}.pdf"'
     response.write(pdf_content)
     return response
+
+
+def validacion_alumno(request, alumno_id):
+    try:
+        alumno_info = User.objects.get(numero_cuenta=alumno_id)
+    except User.DoesNotExist:
+        return HttpResponse("Alumno no encontrado", status=404)
+    
+
+    asignaturas_inscritas = Asignatura.objects.filter(inscripcion__numero_cuenta=alumno_info)
+
+    return render(request, 'validacion_alumno_template.html', {'alumno_info': alumno_info,})

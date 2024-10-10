@@ -1,0 +1,21 @@
+# Ignorar archivos bytecode de Python
+__pycache__/
+*.pyc
+
+# Ignorar entornos virtuales
+venv/
+.env/
+
+# Ignorar archivos de configuración y datos sensibles
+*.save
+*.json
+
+# Ignorar instaladores
+*.sh
+
+# Ignorar archivos estáticos generados
+staticfiles/
+
+# Ignorar archivos sensibles
+.env
+.DS_Store
