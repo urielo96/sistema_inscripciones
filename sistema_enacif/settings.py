@@ -82,8 +82,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'inscripciones_enacif',
-        'USER': 'diego',
-        'PASSWORD': 'En@cIF_874$#',
+        'USER': 'root',
+        'PASSWORD': '3122',
         'HOST': 'localhost',
         'PORT': '3306',
        

@@ -19,3 +19,21 @@ staticfiles/
 # Ignorar archivos sensibles
 .env
 .DS_Store
+
+# Ignorar archivos de logs
+*.log
+
+# Ignorar archivos de base de datos
+*.sqlite3
+
+# Ignorar archivos de configuración de IDE
+.idea/
+
+# Ignorar archivos de entorno virtual
+.si/
+
+# Ignorar archivos de caché de Python
+__pycache__/
+*.py[cod]
+
+si
