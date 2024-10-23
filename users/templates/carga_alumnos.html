@@ -1,28 +1,59 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Carga de Alumnos</title>
-  </head>
+    <script>
+      function mostrarCargando() {
+        document.getElementById("loading").style.display = "block";
+      }
 
+      function ocultarTodosLosMensajes() {
+        var mensajes = document.getElementsByClassName("message");
+        for (var i = 0; i < mensajes.length; i++) {
+          mensajes[i].style.display = "none";
+        }
+      }
+    </script>
+    <style>
+      #loading {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        z-index: 1000;
+      }
+      .message {
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        position: relative;
+      }
+    </style>
+  </head>
   <body>
     <h1>Carga de Alumnos</h1>
-
-    <!-- Mostrar mensajes de error si los hay -->
-    {% if messages %}
-    <ul>
-      {% for message in messages %}
-      <li>{{ message }}</li>
-      {% endfor %}
-    </ul>
-    {% endif %}
-
-    <!-- Formulario para subir el archivo Excel -->
-    <form method="post" enctype="multipart/form-data">
+    <form
+      method="post"
+      enctype="multipart/form-data"
+      onsubmit="mostrarCargando()"
+    >
       {% csrf_token %} {{ form.as_p }}
-
-      <button type="submit">Subir</button>
+      <button type="submit">Cargar Archivo</button>
     </form>
+    <div id="loading">
+      <p>Cargando... Por favor, espera.</p>
+    </div>
+    {% for message in messages %}
+    <div class="message {{ message.tags }}">{{ message }}</div>
+    {% endfor %} {% if messages %}
+    <button onclick="ocultarTodosLosMensajes()">OK</button>
+    {% endif %}
   </body>
 </html>
