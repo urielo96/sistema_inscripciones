@@ -3,6 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <title>Carga de Alumnos</title>
+    <!-- Incluir Bootstrap desde un CDN -->
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
     <script>
       function mostrarCargando() {
         document.getElementById("loading").style.display = "block";
@@ -28,32 +33,38 @@
         border-radius: 10px;
         z-index: 1000;
       }
-      .message {
-        padding: 10px;
-        margin: 10px 0;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        position: relative;
-      }
     </style>
   </head>
   <body>
-    <h1>Carga de Alumnos</h1>
-    <form
-      method="post"
-      enctype="multipart/form-data"
-      onsubmit="mostrarCargando()"
-    >
-      {% csrf_token %} {{ form.as_p }}
-      <button type="submit">Cargar Archivo</button>
-    </form>
-    <div id="loading">
-      <p>Cargando... Por favor, espera.</p>
+    <div class="container mt-5">
+      <h1 class="mb-4">Carga de Alumnos</h1>
+      <form
+        method="post"
+        enctype="multipart/form-data"
+        onsubmit="mostrarCargando()"
+      >
+        {% csrf_token %} {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Cargar Archivo</button>
+      </form>
+      <div id="loading" class="mt-3">
+        <p>Cargando... Por favor, espera.</p>
+      </div>
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} mt-3 message">
+        {{ message }}
+      </div>
+      {% endfor %} {% if messages %}
+      <button
+        class="btn btn-secondary mt-3"
+        onclick="ocultarTodosLosMensajes()"
+      >
+        OK
+      </button>
+      {% endif %}
     </div>
-    {% for message in messages %}
-    <div class="message {{ message.tags }}">{{ message }}</div>
-    {% endfor %} {% if messages %}
-    <button onclick="ocultarTodosLosMensajes()">OK</button>
-    {% endif %}
+    <!-- Incluir Bootstrap JS y dependencias -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   </body>
 </html>

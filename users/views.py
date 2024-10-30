@@ -66,13 +66,15 @@ def vista_administrador(request):
     return render(request, 'authenticate/inscripcion.html', {'messages': messages.get_messages(request)})
     
 
+from django.contrib import messages
+import openpyxl
+
 def carga_users(request):
     if request.method == 'POST':
         form = Carga_alumnos(request.POST, request.FILES)
         if form.is_valid():
             try:
                 archivo = openpyxl.load_workbook(request.FILES['file'])
-                usuarios_procesados = set()  # Conjunto para almacenar los números de cuenta procesados
                 
                 for hoja in archivo.worksheets:  # Iterar sobre todas las hojas
                     for fila in hoja.iter_rows(min_row=2, values_only=True):
@@ -93,17 +95,14 @@ def carga_users(request):
                             # Separar el nombre completo en nombre y apellidos
                             nombre_partes = nombre_completo.split()
                             if len(nombre_partes) < 2:
-                                # Caso en el que no hay suficientes datos (menos de dos nombre_partes)
                                 apellido_paterno = ''
                                 apellido_materno = ''
                                 nombre_final = nombre_partes[0] if nombre_partes else ''
                             elif len(nombre_partes) == 2:
-                                # Caso con un apellido y un nombre
                                 nombre_final = nombre_partes[0]
                                 apellido_paterno = nombre_partes[1]
                                 apellido_materno = ''
                             else:
-                                # Caso con más de dos partes en el nombre
                                 nombre_final = nombre_partes[0]
                                 apellido_paterno = nombre_partes[1]
                                 apellido_materno = ' '.join(nombre_partes[2:])
@@ -126,8 +125,7 @@ def carga_users(request):
 
                             # Crear y guardar la instancia del modelo User
                             if numero_cuenta is not None:
-                                print(f'Número de cuenta: {numero_cuenta}')
-                                User.objects.create(
+                                usuario = User.objects.create(
                                     numero_cuenta=numero_cuenta,
                                     password='contrasena_codificada',  # Asegúrate de definir contrasena_codificada
                                     is_superuser=is_superuser,
@@ -139,7 +137,24 @@ def carga_users(request):
                                     is_active=is_active,
                                     semestre_actual=semestre_actual
                                 )
-                                messages.success(request, f'{first_name} ha sido registrado exitosamente.')
+                                messages.success(request, f'El usuario {first_name} {last_name} ha sido registrado exitosamente.')
+                            
+                            # Inscribir al alumno en las materias
+                            for col in range(4, len(fila), 3):  # Asumiendo que cada materia ocupa 3 columnas (CVE, Asignatura, Grupo)
+                                cve = fila[col]
+                                asignatura = fila[col + 1]
+                                grupo = fila[col + 2]
+                                
+                                if cve and asignatura and grupo:
+                                    # Buscar o crear la materia en la base de datos
+                                    materia, created = Materia.objects.get_or_create(
+                                        cve=cve,
+                                        nombre=asignatura,
+                                        grupo=grupo
+                                    )
+                                    # Asociar la materia al usuario
+                                    usuario.materias.add(materia)  # Asumiendo una relación ManyToMany
+                                    messages.success(request, f'{first_name} {last_name} inscrito en {asignatura}.')
                             else:
                                 messages.error(request, 'El número de cuenta no puede ser nulo.')
             except Exception as e:
@@ -148,3 +163,4 @@ def carga_users(request):
         form = Carga_alumnos()
     
     return render(request, 'carga_alumnos.html', {'form': form})
+

@@ -65,9 +65,7 @@ class Grupo(models.Model):
 
 class Inscripcion(models.Model):
     id = models.AutoField(primary_key=True)
-    numero_cuenta = models.OneToOneField(User,
-                                         on_delete=models.CASCADE,
-                                         related_name='alumno')
+    numero_cuenta = models.OneToOneField(User,on_delete=models.CASCADE, related_name='alumno')
     asignatura = models.ManyToManyField(Asignatura, blank=False)
 
     class Meta:
