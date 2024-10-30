@@ -8,7 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.core.exceptions import ObjectDoesNotExist
-from inscripcion.models import Inscripcion
+from inscripcion.models import Inscripcion, Asignatura
 
 
 from django.shortcuts import render, redirect
@@ -21,6 +21,8 @@ import openpyxl
 from django.contrib.auth.hashers import make_password
 from .models import User
 from django.shortcuts import render
+from inscripcion.models import Inscripcion
+
 
 def login_users(request):
     if request.method == 'POST':
@@ -66,9 +68,6 @@ def vista_administrador(request):
     return render(request, 'authenticate/inscripcion.html', {'messages': messages.get_messages(request)})
     
 
-from django.contrib import messages
-import openpyxl
-
 def carga_users(request):
     if request.method == 'POST':
         form = Carga_alumnos(request.POST, request.FILES)
@@ -77,7 +76,7 @@ def carga_users(request):
                 archivo = openpyxl.load_workbook(request.FILES['file'])
                 
                 for hoja in archivo.worksheets:  # Iterar sobre todas las hojas
-                    for fila in hoja.iter_rows(min_row=2, values_only=True):
+                    for fila in hoja.iter_rows(min_row=2, values_only=True): # Iterar sobre todas las filas
                         if fila[2] is not None:
                             numero_cuenta = fila[1]
                             nombre_completo = fila[2]
@@ -138,29 +137,47 @@ def carga_users(request):
                                     semestre_actual=semestre_actual
                                 )
                                 messages.success(request, f'El usuario {first_name} {last_name} ha sido registrado exitosamente.')
+
+                    # Procesar materias e inscripciones por cada alumno
+                    alumnos_materias = []
+                    materias_actuales = []
+
+                    # Construir el mapeo de alumnos a sus materias desde el archivo
+                    for fila in hoja.iter_rows(min_row=2, values_only=True):
+                        if fila[1] is not None:
+                            if materias_actuales:
+                                alumnos_materias.append((numero_cuenta, materias_actuales))
+                            numero_cuenta = fila[1]
+                            materias_actuales = []
+                        clave_asignatura = fila[3]
+                        if clave_asignatura is not None:
+                            materias_actuales.append(clave_asignatura)
+
+                    # Añadir la última lista de materias si no está vacía
+                    if materias_actuales:
+                        alumnos_materias.append((numero_cuenta, materias_actuales))
+
+                    # Registrar las inscripciones
+                    for numero_cuenta, materias in alumnos_materias:
+                        try:
+                            user = User.objects.get(numero_cuenta=numero_cuenta)
+                            inscripcion, created = Inscripcion.objects.get_or_create(numero_cuenta=user)
                             
-                            # Inscribir al alumno en las materias
-                            for col in range(4, len(fila), 3):  # Asumiendo que cada materia ocupa 3 columnas (CVE, Asignatura, Grupo)
-                                cve = fila[col]
-                                asignatura = fila[col + 1]
-                                grupo = fila[col + 2]
-                                
-                                if cve and asignatura and grupo:
-                                    # Buscar o crear la materia en la base de datos
-                                    materia, created = Materia.objects.get_or_create(
-                                        cve=cve,
-                                        nombre=asignatura,
-                                        grupo=grupo
-                                    )
-                                    # Asociar la materia al usuario
-                                    usuario.materias.add(materia)  # Asumiendo una relación ManyToMany
-                                    messages.success(request, f'{first_name} {last_name} inscrito en {asignatura}.')
-                            else:
-                                messages.error(request, 'El número de cuenta no puede ser nulo.')
+                            # Obtener las asignaturas y asignarlas con 'set()' usando el campo correcto 'clave_asignatura'
+                            asignaturas = Asignatura.objects.filter(clave_asignatura__in=materias)
+                            inscripcion.asignatura.set(asignaturas)  # Usamos set() en lugar de add()
+                            
+                            inscripcion.save()  # Guardar la inscripción con las asignaturas asignadas
+                        except User.DoesNotExist:
+                            messages.error(request, f'Error: El usuario con número de cuenta {numero_cuenta} no existe.')
+                        except Asignatura.DoesNotExist:
+                            messages.error(request, f'Error: La asignatura con clave {clave_asignatura} no existe.')
+
+                    print("Materias inscritas para cada alumno.")
+                
             except Exception as e:
                 messages.error(request, f'Error al cargar el alumno: {str(e)}')
     else:
         form = Carga_alumnos()
     
     return render(request, 'carga_alumnos.html', {'form': form})
-

@@ -24,4 +24,4 @@ class User(AbstractUser):
     
 
     def __str__(self):
-        return f'{self.first_name},{self.numero_cuenta}'
+        return f' {self.last_name} {self.first_name},{self.numero_cuenta}'
