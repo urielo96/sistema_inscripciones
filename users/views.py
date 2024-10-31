@@ -77,18 +77,38 @@ def carga_users(request):
                 
                 for hoja in archivo.worksheets:  # Iterar sobre todas las hojas
                     for fila in hoja.iter_rows(min_row=2, values_only=True): # Iterar sobre todas las filas
+                        print(f'Procesando la hoja {hoja.title}...')
+                        
+                        semestre = {
+                            '1': 1,
+                            '2': 2,
+                            '3': 3,
+                            '4': 4,
+                            '5': 5,
+                            '6': 6,
+                            '7': 7,
+                            '8': 8,
+                            '9': 9,
+                        }
+
+                        semestre_actual = next((semestre[key] for key in semestre if key in hoja.title), None)
+
+                        if semestre_actual is None:
+                            continue
+                            
+
                         if fila[2] is not None:
                             numero_cuenta = fila[1]
                             nombre_completo = fila[2]
                             
                             # Verificar si el usuario ya existe por número de cuenta
-                            if User.objects.filter(numero_cuenta=numero_cuenta).exists():
+                            if User.objects.filter(numero_cuenta=numero_cuenta).exists(): 
                                 messages.warning(request, f'El usuario con número de cuenta {numero_cuenta} {nombre_completo} ya tiene una cuenta.')
                                 continue
                             
                             # Verificar que nombre_completo sea una cadena antes de intentar dividirlo
                             if not isinstance(nombre_completo, str):
-                                messages.error(request, f'Error en la fila: {fila}. El nombre completo no es una cadena.')
+                                messages.error(request, f'Error en la fila: {fila}. El nombre completo no es un nombre válido.')
                                 continue
                             
                             # Separar el nombre completo en nombre y apellidos
@@ -96,16 +116,17 @@ def carga_users(request):
                             if len(nombre_partes) < 2:
                                 apellido_paterno = ''
                                 apellido_materno = ''
-                                nombre_final = nombre_partes[0] if nombre_partes else ''
+                                nombre = nombre_partes[2] if nombre_partes else ''
                             elif len(nombre_partes) == 2:
-                                nombre_final = nombre_partes[0]
-                                apellido_paterno = nombre_partes[1]
+                                nombre = nombre_partes[2]
+                                apellido_paterno = nombre_partes[0]
                                 apellido_materno = ''
                             else:
-                                nombre_final = nombre_partes[0]
-                                apellido_paterno = nombre_partes[1]
-                                apellido_materno = ' '.join(nombre_partes[2:])
+                                nombre = nombre_partes[2]
+                                apellido_paterno = nombre_partes[0]
+                                apellido_materno = nombre_partes[1]
                             
+
                             # Generar un username único
                             base_username = '_'.join(nombre_partes)
                             username = base_username
@@ -114,19 +135,20 @@ def carga_users(request):
                                 username = f"{base_username}_{contador}"
                                 contador += 1
                             
-                            semestre_actual = 1
                             is_superuser = False
                             is_staff = False
                             is_active = True
                             email = fila[3] if fila[3] else 'default@example.com'
-                            first_name = nombre_final
+                            first_name = nombre
                             last_name = f"{apellido_paterno} {apellido_materno}"
+                            
 
                             # Crear y guardar la instancia del modelo User
                             if numero_cuenta is not None:
+                                contraseña = f'{numero_cuenta}{apellido_paterno}' 
+                                
                                 usuario = User.objects.create(
                                     numero_cuenta=numero_cuenta,
-                                    password='contrasena_codificada',  # Asegúrate de definir contrasena_codificada
                                     is_superuser=is_superuser,
                                     username=username,
                                     first_name=first_name,
@@ -136,6 +158,9 @@ def carga_users(request):
                                     is_active=is_active,
                                     semestre_actual=semestre_actual
                                 )
+                                usuario.set_password(contraseña)  # Establecer la contraseña como el número de cuenta
+                                usuario.save()
+
                                 messages.success(request, f'El usuario {first_name} {last_name} ha sido registrado exitosamente.')
 
                     # Procesar materias e inscripciones por cada alumno
