@@ -122,17 +122,27 @@ def is_administrativo(user):
 @login_required
 @user_passes_test(is_administrativo, login_url='/inscripcion/grupos')
 def usuarios_inscritos_grupo(request):
+    
     grupos = Grupo.objects.all()
+    
     grupo_seleccionado = None
     usuarios_inscritos = []
 
     grupo_clave_str = request.GET.get('grupo', '')  # Obtener el valor del parámetro 'grupo' con un valor predeterminado de ''
+    
+
     if grupo_clave_str:
         try:
+
             grupo_clave = int(grupo_clave_str)
+            print(f' Es es el grupo que se le esta pasando para hacer la consulta {grupo_clave}')
             grupo_seleccionado = Grupo.objects.get(clave_grupo=grupo_clave)
+            print(f' Este es el grupo seleccionado {grupo_seleccionado}')
             asignaturas_grupo = grupo_seleccionado.asignaturas.all()
+            print(asignaturas_grupo)
             usuarios_inscritos = User.objects.filter(alumno__asignatura__in=asignaturas_grupo).distinct()
+            print(usuarios_inscritos)
+        
         except (ValueError, Grupo.DoesNotExist):
             grupo_seleccionado = None  # Manejar el caso en que el grupo no existe o el valor no es un entero válido
 

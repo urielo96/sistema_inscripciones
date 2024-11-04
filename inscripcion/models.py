@@ -54,9 +54,7 @@ class Grupo(models.Model):
         (9, 'Noveno Semestre'),
     )
     semestre = models.PositiveSmallIntegerField(choices= opciones)
-    asignaturas = models.ManyToManyField(
-        Asignatura,
-        related_name='asignaturas')
+    asignaturas = models.ManyToManyField(Asignatura,related_name='asignaturas')
  
 
     def __str__(self):
