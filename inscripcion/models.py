@@ -61,16 +61,31 @@ class Grupo(models.Model):
         return str(self.clave_grupo)
 
 
+# models.py
+
+class Periodo(models.Model):
+    codigo = models.CharField(max_length=7, unique=True)  # Ej. "2023-1", "2023-2"
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField()
+    activo = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.codigo
+
 class Inscripcion(models.Model):
     id = models.AutoField(primary_key=True)
     numero_cuenta = models.OneToOneField(User,on_delete=models.CASCADE, related_name='alumno')
     asignatura = models.ManyToManyField(Asignatura, blank=False)
+    periodo = models.ForeignKey(Periodo, on_delete=models.CASCADE, default=1)  # Asigna el id de un periodo existente
 
     class Meta:
         verbose_name = 'Inscripcion'
         verbose_name_plural = 'Inscripciones'
+        unique_together = ('numero_cuenta', 'periodo')
       
 
     def __str__(self):
         return str(self.numero_cuenta)
         
+
+

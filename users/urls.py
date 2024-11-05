@@ -9,4 +9,5 @@ urlpatterns = [
     path('logout/', views.logout_users, name='logout'),
     path('grupos/',views.vista_administrador, name='inscripcion'), 
     path('carga_users/',views.carga_users, name='carga_users'),
+    path('crear_periodo/',views.crear_periodo, name='crear_periodo'),
 ]

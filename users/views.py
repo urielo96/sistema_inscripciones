@@ -8,7 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.core.exceptions import ObjectDoesNotExist
-from inscripcion.models import Inscripcion, Asignatura
+from inscripcion.models import Inscripcion, Asignatura, Periodo
 
 
 from django.shortcuts import render, redirect
@@ -206,3 +206,18 @@ def carga_users(request):
         form = Carga_alumnos()
     
     return render(request, 'carga_alumnos.html', {'form': form})
+
+
+def crear_periodo(request):
+    if request.method == 'POST':
+        codigo = request.POST['codigo']
+        fecha_inicio = request.POST['fecha_inicio']
+        fecha_fin = request.POST['fecha_fin']
+        activo = 'activo' in request.POST  # Convertir el valor del checkbox a booleano
+
+        periodo = Periodo(codigo=codigo, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, activo=activo)
+        periodo.save()
+        messages.success(request, 'Periodo creado exitosamente.')
+        return redirect('crear_periodo')  # Redirigir después de guardar
+
+    return render(request, 'crear_periodo.html')
