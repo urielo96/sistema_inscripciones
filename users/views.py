@@ -22,6 +22,7 @@ from django.contrib.auth.hashers import make_password
 from .models import User
 from django.shortcuts import render
 from inscripcion.models import Inscripcion
+from django.contrib.auth.models import Group
 
 
 def login_users(request):
@@ -69,14 +70,19 @@ def vista_administrador(request):
     
 
 def carga_users(request):
+    periodos = Periodo.objects.all()  # Obtener todos los períodos disponibles
+
     if request.method == 'POST':
+        periodo_id = request.POST.get('periodo')
         form = Carga_alumnos(request.POST, request.FILES)
         if form.is_valid():
             try:
                 archivo = openpyxl.load_workbook(request.FILES['file'])
-                
+                grupo_alumnos = Group.objects.get(name='Alumnos')  # Obtener el grupo "Alumnos"
+                periodo = Periodo.objects.get(id=periodo_id)  # Obtener el período seleccionado
+
                 for hoja in archivo.worksheets:  # Iterar sobre todas las hojas
-                    for fila in hoja.iter_rows(min_row=2, values_only=True): # Iterar sobre todas las filas
+                    for fila in hoja.iter_rows(min_row=2, values_only=True):  # Iterar sobre todas las filas
                         print(f'Procesando la hoja {hoja.title}...')
                         
                         semestre = {
@@ -94,8 +100,7 @@ def carga_users(request):
                         semestre_actual = next((semestre[key] for key in semestre if key in hoja.title), None)
 
                         if semestre_actual is None:
-                            continue
-                            
+                            continue  # Si no se encuentra un semestre válido, pasar a la siguiente hoja
 
                         if fila[2] is not None:
                             numero_cuenta = fila[1]
@@ -116,17 +121,16 @@ def carga_users(request):
                             if len(nombre_partes) < 2:
                                 apellido_paterno = ''
                                 apellido_materno = ''
-                                nombre = nombre_partes[2] if nombre_partes else ''
+                                nombre_final = nombre_partes[0] if nombre_partes else ''
                             elif len(nombre_partes) == 2:
-                                nombre = nombre_partes[2]
-                                apellido_paterno = nombre_partes[0]
+                                nombre_final = nombre_partes[0]
+                                apellido_paterno = nombre_partes[1]
                                 apellido_materno = ''
                             else:
-                                nombre = nombre_partes[2]
-                                apellido_paterno = nombre_partes[0]
-                                apellido_materno = nombre_partes[1]
+                                nombre_final = nombre_partes[0]
+                                apellido_paterno = nombre_partes[1]
+                                apellido_materno = ' '.join(nombre_partes[2:])
                             
-
                             # Generar un username único
                             base_username = '_'.join(nombre_partes)
                             username = base_username
@@ -135,18 +139,17 @@ def carga_users(request):
                                 username = f"{base_username}_{contador}"
                                 contador += 1
                             
+                            semestre_actual = 1
                             is_superuser = False
                             is_staff = False
                             is_active = True
                             email = fila[3] if fila[3] else 'default@example.com'
-                            first_name = nombre
+                            first_name = nombre_final
                             last_name = f"{apellido_paterno} {apellido_materno}"
                             
-
                             # Crear y guardar la instancia del modelo User
                             if numero_cuenta is not None:
-                                contraseña = f'{numero_cuenta}{apellido_paterno}' 
-                                
+                                contrasena_inicial = f"{numero_cuenta}{apellido_paterno}"
                                 usuario = User.objects.create(
                                     numero_cuenta=numero_cuenta,
                                     is_superuser=is_superuser,
@@ -158,16 +161,26 @@ def carga_users(request):
                                     is_active=is_active,
                                     semestre_actual=semestre_actual
                                 )
-                                usuario.set_password(contraseña)  # Establecer la contraseña como el número de cuenta
+                                usuario.set_password(contrasena_inicial)  # Establecer la contraseña como el número de cuenta seguido del apellido paterno
                                 usuario.save()
 
-                                messages.success(request, f'El usuario {first_name} {last_name} ha sido registrado exitosamente.')
+                                # Asignar el usuario al grupo "Alumnos"
+                                usuario.groups.add(grupo_alumnos)
 
-                    # Procesar materias e inscripciones por cada alumno
-                    alumnos_materias = []
-                    materias_actuales = []
+                                # Crear la inscripción y asignar el período
+                                inscripcion = Inscripcion.objects.create(
+                                    numero_cuenta=usuario,
+                                    periodo=periodo
+                                )
 
-                    # Construir el mapeo de alumnos a sus materias desde el archivo
+                                messages.success(request, f'El usuario {first_name} {last_name} ha sido registrado exitosamente con la contraseña inicial: {contrasena_inicial}')
+
+                # Procesar materias e inscripciones por cada alumno
+                alumnos_materias = []
+                materias_actuales = []
+
+                # Construir el mapeo de alumnos a sus materias desde el archivo
+                for hoja in archivo.worksheets:  # Iterar sobre todas las hojas
                     for fila in hoja.iter_rows(min_row=2, values_only=True):
                         if fila[1] is not None:
                             if materias_actuales:
@@ -178,34 +191,34 @@ def carga_users(request):
                         if clave_asignatura is not None:
                             materias_actuales.append(clave_asignatura)
 
-                    # Añadir la última lista de materias si no está vacía
-                    if materias_actuales:
-                        alumnos_materias.append((numero_cuenta, materias_actuales))
+                # Añadir la última lista de materias si no está vacía
+                if materias_actuales:
+                    alumnos_materias.append((numero_cuenta, materias_actuales))
 
-                    # Registrar las inscripciones
-                    for numero_cuenta, materias in alumnos_materias:
-                        try:
-                            user = User.objects.get(numero_cuenta=numero_cuenta)
-                            inscripcion, created = Inscripcion.objects.get_or_create(numero_cuenta=user)
-                            
-                            # Obtener las asignaturas y asignarlas con 'set()' usando el campo correcto 'clave_asignatura'
-                            asignaturas = Asignatura.objects.filter(clave_asignatura__in=materias)
-                            inscripcion.asignatura.set(asignaturas)  # Usamos set() en lugar de add()
-                            
-                            inscripcion.save()  # Guardar la inscripción con las asignaturas asignadas
-                        except User.DoesNotExist:
-                            messages.error(request, f'Error: El usuario con número de cuenta {numero_cuenta} no existe.')
-                        except Asignatura.DoesNotExist:
-                            messages.error(request, f'Error: La asignatura con clave {clave_asignatura} no existe.')
+                # Registrar las inscripciones
+                for numero_cuenta, materias in alumnos_materias:
+                    try:
+                        user = User.objects.get(numero_cuenta=numero_cuenta)
+                        inscripcion, created = Inscripcion.objects.get_or_create(numero_cuenta=user, periodo=periodo)
+                        for clave in materias:
+                            asignatura = Asignatura.objects.get(clave=clave)
+                            inscripcion.asignatura.add(asignatura)
+                        messages.success(request, f'Materias inscritas para el alumno {user.first_name} {user.last_name}.')
+                    except User.DoesNotExist:
+                        messages.error(request, f'Error: El usuario con número de cuenta {numero_cuenta} no existe.')
+                    except Asignatura.DoesNotExist:
+                        messages.error(request, f'Error: La asignatura con clave {clave_asignatura} no existe.')
 
-                    print("Materias inscritas para cada alumno.")
+                print("Materias inscritas para cada alumno.")
                 
             except Exception as e:
                 messages.error(request, f'Error al cargar el alumno: {str(e)}')
     else:
         form = Carga_alumnos()
     
-    return render(request, 'carga_alumnos.html', {'form': form})
+    return render(request, 'carga_alumnos.html', {'form': form, 'periodos': periodos})
+
+
 
 
 def crear_periodo(request):

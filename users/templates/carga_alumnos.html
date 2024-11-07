@@ -44,6 +44,14 @@
         onsubmit="mostrarCargando()"
       >
         {% csrf_token %} {{ form.as_p }}
+        <div class="form-group">
+          <label for="periodo">Período</label>
+          <select name="periodo" id="periodo" class="form-control" required>
+            {% for periodo in periodos %}
+            <option value="{{ periodo.id }}">{{ periodo.codigo }}</option>
+            {% endfor %}
+          </select>
+        </div>
         <button type="submit" class="btn btn-primary">Cargar Archivo</button>
       </form>
       <div id="loading" class="mt-3">
