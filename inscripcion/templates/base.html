@@ -61,6 +61,17 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav ms-auto">
             {% if request.user.is_authenticated %}
+
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'crear_periodo' %}"
+                >Crear Periodo</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'carga_users' %}"
+                >Cargar Alumnos</a
+              >
+            </li>
             <li class="nav-item">
               <form
                 id="logout-form"
@@ -82,7 +93,8 @@
         </div>
       </div>
     </nav>
-    <div class="container">{% block body %}{% endblock %}</div>
+
+    <div class="container">{% block body %} {% endblock %}</div>
 
     <script
       src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
