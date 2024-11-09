@@ -60,8 +60,7 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav ms-auto">
-            {% if request.user.is_authenticated %}
-
+            {% if request.user.is_authenticated %} {% if es_administrador%}
             <li class="nav-item">
               <a class="nav-link" href="{% url 'crear_periodo' %}"
                 >Crear Periodo</a
@@ -72,6 +71,7 @@
                 >Cargar Alumnos</a
               >
             </li>
+            {% endif %}
             <li class="nav-item">
               <form
                 id="logout-form"

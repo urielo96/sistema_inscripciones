@@ -34,13 +34,14 @@ def login_users(request):
         if user is not None:
             login(request, user)
 
-            try:
-                # Intentar obtener la instancia de Inscripcion del usuario
-                inscripcion = user.alumno
-            except ObjectDoesNotExist:
-                # Si no existe la instancia de Inscripcion, crearla
-                inscripcion = Inscripcion(numero_cuenta=user)
-                inscripcion.save()
+            # try:
+            #     # Intentar obtener la instancia de Inscripcion del usuario
+            #     inscripcion = user.alumno
+            # except ObjectDoesNotExist:
+            #     # Si no existe la instancia de Inscripcion, crearla
+            #     perio = 'Sin periodo'
+            #     inscripcion = Inscripcion(numero_cuenta=user)
+            #     inscripcion.save()
 
             # Verificar si el usuario es administrativo
             if user.groups.filter(name='Administrativos').exists():
@@ -162,6 +163,7 @@ def carga_users(request):
                                     semestre_actual=semestre_actual
                                 )
                                 usuario.set_password(contrasena_inicial)  # Establecer la contraseña como el número de cuenta seguido del apellido paterno
+                                print(contrasena_inicial)
                                 usuario.save()
 
                                 # Asignar el usuario al grupo "Alumnos"
@@ -194,20 +196,22 @@ def carga_users(request):
                 # Añadir la última lista de materias si no está vacía
                 if materias_actuales:
                     alumnos_materias.append((numero_cuenta, materias_actuales))
+                
+                print(f'Meterias inscritas: {alumnos_materias}')
 
                 # Registrar las inscripciones
                 for numero_cuenta, materias in alumnos_materias:
                     try:
                         user = User.objects.get(numero_cuenta=numero_cuenta)
                         inscripcion, created = Inscripcion.objects.get_or_create(numero_cuenta=user, periodo=periodo)
-                        for clave in materias:
-                            asignatura = Asignatura.objects.get(clave=clave)
+                        for clave_asignatura in materias:
+                            asignatura = Asignatura.objects.get(clave_asignatura=clave_asignatura)
                             inscripcion.asignatura.add(asignatura)
                         messages.success(request, f'Materias inscritas para el alumno {user.first_name} {user.last_name}.')
                     except User.DoesNotExist:
                         messages.error(request, f'Error: El usuario con número de cuenta {numero_cuenta} no existe.')
                     except Asignatura.DoesNotExist:
-                        messages.error(request, f'Error: La asignatura con clave {clave_asignatura} no existe.')
+                        messages.error(request, f'Error: La asignatura con clave_asignatura {clave_asignatura} no existe.')
 
                 print("Materias inscritas para cada alumno.")
                 
