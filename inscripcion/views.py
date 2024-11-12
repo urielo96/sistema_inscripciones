@@ -9,7 +9,7 @@ from django.db import IntegrityError
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from users.models import User
-from inscripcion.models import Asignatura, Inscripcion, Grupo
+from inscripcion.models import Asignatura, Inscripcion, Grupo, Periodo
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import user_passes_test
@@ -41,6 +41,8 @@ def index(request):
     alumno = request.user
     numero_cuenta = alumno.numero_cuenta
     
+    periodo = Periodo.objects.get(activo=True)
+
     # Obtener el semestre actual del alumno
     semestre_actual = alumno.semestre_actual
     
@@ -57,6 +59,7 @@ def index(request):
         'cursos_listados': cursos_listados,
         'asignaturas_inscritas': asignaturas_inscritas,
         'mostrar_boton_comprobante': mostrar_boton_comprobante,
+        'periodo': periodo,
     })
 
 
@@ -214,6 +217,7 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from .models import Asignatura
+from django.utils.html import escape
 
 @login_required
 def generar_comprobante(request, alumno_id):
@@ -224,7 +228,8 @@ def generar_comprobante(request, alumno_id):
     
 
     asignaturas_inscritas = Asignatura.objects.filter(inscripcion__numero_cuenta=alumno_info)
-
+    periodo = Periodo.objects.get(activo = True)
+    periodo = escape(str(periodo))
     
 
 
@@ -307,7 +312,7 @@ def generar_comprobante(request, alumno_id):
     ],
     [
         Paragraph("<b>Periodo:</b>", styles['Normal']),
-        Paragraph("2025-1", styles['Normal']),  # Aquí puedes poner el valor del periodo si es dinámico
+        Paragraph(periodo, styles['Normal']),  # Aquí puedes poner el valor del periodo si es dinámico
     ],
     [
         Paragraph("<b>Semestre:</b>", styles['Normal']),

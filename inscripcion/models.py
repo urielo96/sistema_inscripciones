@@ -69,6 +69,13 @@ class Periodo(models.Model):
     fecha_fin = models.DateField()
     activo = models.BooleanField(default=False)
 
+    def save(self, *args, **kwargs):
+        # Desactivar los demás periodos
+        if self.activo:
+            Periodo.objects.exclude(pk=self.pk).update(activo=False)
+        super(Periodo, self).save(*args, **kwargs)
+
+
     def __str__(self):
         return self.codigo
 

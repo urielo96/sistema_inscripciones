@@ -40,8 +40,8 @@
                     <th class="text-center">#</th>
                     <th class="text-center">Número de Cuenta</th>
                     <th class="text-center">Nombre</th>
-                    <th class="text-center">Grupo</th>
-                    <th class="text-center">Número de Materias Inscritas</th>
+                    <!-- <th class="text-center">Grupo</th>
+                    <th class="text-center">Número de Materias Inscritas</th> -->
                 </tr>
                 </tr>
             </thead>
@@ -53,9 +53,9 @@
                         
                         <td class="text-center">{{ forloop.counter }}</td>
                         <td class="text-center">{{ usuario.numero_cuenta }}</td>
-                        <td class="text-center">{{ usuario.first_name }} {{ usuario.last_name }}</td>
-                        <td class="text-center">{{ grupo_seleccionado.clave_grupo }}</td>
-                        <td class="text-center">{{ materias_inscritas.count }}</td>
+                        <td class="text-center">{{ usuario.last_name }}{{ usuario.first_name }} </td>
+                        <!-- <td class="text-center">{{ grupo_seleccionado.clave_grupo }}</td>
+                        <td class="text-center">{{ materias_inscritas.count }}</td> -->
 
                     </tr>
                     {% endwith %}

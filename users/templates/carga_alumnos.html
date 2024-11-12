@@ -1,4 +1,4 @@
-{% extends 'base.html' %} {% load static %}
+{% extends 'base.html' %} {% load static %} {% block body %}
 <!DOCTYPE html>
 <html lang="es">
   <head>
@@ -62,7 +62,7 @@
       <div class="alert alert-{{ message.tags }} mt-3 message">
         {{ message }}
       </div>
-      {% endfor %} {% if messages %}312245168
+      {% endfor %} {% if messages %}
       <button
         class="btn btn-secondary mt-3"
         onclick="ocultarTodosLosMensajes()"
@@ -77,3 +77,4 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   </body>
 </html>
+{% endblock %}

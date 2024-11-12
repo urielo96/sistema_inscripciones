@@ -60,7 +60,13 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav ms-auto">
-            {% if request.user.is_authenticated %} {% if es_administrador%}
+            {% if request.user.is_authenticated %} {% if request.user.is_staff%}
+
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'usuarios_inscritos_grupo' %}"
+                >Inicio</a
+              >
+            </li>
             <li class="nav-item">
               <a class="nav-link" href="{% url 'crear_periodo' %}"
                 >Crear Periodo</a

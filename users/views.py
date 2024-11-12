@@ -23,6 +23,7 @@ from .models import User
 from django.shortcuts import render
 from inscripcion.models import Inscripcion
 from django.contrib.auth.models import Group
+from django.db import IntegrityError
 
 
 def login_users(request):
@@ -80,7 +81,8 @@ def carga_users(request):
             try:
                 archivo = openpyxl.load_workbook(request.FILES['file'])
                 grupo_alumnos = Group.objects.get(name='Alumnos')  # Obtener el grupo "Alumnos"
-                periodo = Periodo.objects.get(id=periodo_id)  # Obtener el período seleccionado
+                periodo = Periodo.objects.get(activo = True)  # Obtener el período seleccionado
+
 
                 for hoja in archivo.worksheets:  # Iterar sobre todas las hojas
                     for fila in hoja.iter_rows(min_row=2, values_only=True):  # Iterar sobre todas las filas
@@ -99,9 +101,11 @@ def carga_users(request):
                         }
 
                         semestre_actual = next((semestre[key] for key in semestre if key in hoja.title), None)
-
                         if semestre_actual is None:
+                            semestre_actual = 1
                             continue  # Si no se encuentra un semestre válido, pasar a la siguiente hoja
+
+                        grupo = fila[5]
 
                         if fila[2] is not None:
                             numero_cuenta = fila[1]
@@ -120,7 +124,7 @@ def carga_users(request):
                             # Separar el nombre completo en nombre y apellidos
                             nombre_partes = nombre_completo.split()
                             if len(nombre_partes) < 2:
-                                apellido_paterno = ''
+                                apellido_paterno = nombre_partes[0] 
                                 apellido_materno = ''
                                 nombre_final = nombre_partes[0] if nombre_partes else ''
                             elif len(nombre_partes) == 2:
@@ -128,9 +132,9 @@ def carga_users(request):
                                 apellido_paterno = nombre_partes[1]
                                 apellido_materno = ''
                             else:
-                                nombre_final = nombre_partes[0]
-                                apellido_paterno = nombre_partes[1]
-                                apellido_materno = ' '.join(nombre_partes[2:])
+                                nombre_final =  ' '.join(nombre_partes[2:])
+                                apellido_paterno = nombre_partes[0]
+                                apellido_materno = nombre_partes[1]
                             
                             # Generar un username único
                             base_username = '_'.join(nombre_partes)
@@ -140,7 +144,7 @@ def carga_users(request):
                                 username = f"{base_username}_{contador}"
                                 contador += 1
                             
-                            semestre_actual = 1
+                            
                             is_superuser = False
                             is_staff = False
                             is_active = True
@@ -174,6 +178,10 @@ def carga_users(request):
                                     numero_cuenta=usuario,
                                     periodo=periodo
                                 )
+
+                                
+                                
+
 
                                 messages.success(request, f'El usuario {first_name} {last_name} ha sido registrado exitosamente con la contraseña inicial: {contrasena_inicial}')
 
@@ -219,22 +227,43 @@ def carga_users(request):
                 messages.error(request, f'Error al cargar el alumno: {str(e)}')
     else:
         form = Carga_alumnos()
+        periodos = Periodo.objects.filter(activo=True)
     
     return render(request, 'carga_alumnos.html', {'form': form, 'periodos': periodos})
 
 
 
 
+
 def crear_periodo(request):
     if request.method == 'POST':
-        codigo = request.POST['codigo']
-        fecha_inicio = request.POST['fecha_inicio']
-        fecha_fin = request.POST['fecha_fin']
-        activo = 'activo' in request.POST  # Convertir el valor del checkbox a booleano
+        if 'periodo_id' in request.POST:
+            # Manejar la activación del período
+            periodo_id = request.POST.get('periodo_id')
+            try:
+                periodo = Periodo.objects.get(id=periodo_id)
+                # Desactivar todos los períodos
+                Periodo.objects.update(activo=False)
+                # Activar el período seleccionado
+                periodo.activo = True
+                periodo.save()
+                messages.success(request, f'El período {periodo.codigo} ha sido activado.')
+            except Periodo.DoesNotExist:
+                messages.error(request, 'El período no existe.')
+        else:
+            # Manejar la creación del período
+            codigo = request.POST['codigo']
+            fecha_inicio = request.POST['fecha_inicio']
+            fecha_fin = request.POST['fecha_fin']
+            activo = 'activo' in request.POST  # Convertir el valor del checkbox a booleano
 
-        periodo = Periodo(codigo=codigo, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, activo=activo)
-        periodo.save()
-        messages.success(request, 'Periodo creado exitosamente.')
-        return redirect('crear_periodo')  # Redirigir después de guardar
+            periodo = Periodo(codigo=codigo, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, activo=activo)
+            try:
+                periodo.save()
+                messages.success(request, 'Periodo creado exitosamente.')
+            except IntegrityError:
+                messages.error(request, 'Error: Ya existe un período con el mismo código.')
+        return redirect('crear_periodo')
 
-    return render(request, 'crear_periodo.html')
+    periodos = Periodo.objects.all()
+    return render(request, 'crear_periodo.html', {'periodos': periodos})
