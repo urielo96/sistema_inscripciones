@@ -143,7 +143,10 @@ def usuarios_inscritos_grupo(request):
             print(f' Este es el grupo seleccionado {grupo_seleccionado}')
             asignaturas_grupo = grupo_seleccionado.asignaturas.all()
             print(asignaturas_grupo)
-            usuarios_inscritos = User.objects.filter(alumno__asignatura__in=asignaturas_grupo).distinct()
+            usuarios_inscritos = User.objects.filter(
+                alumno__asignatura__in=asignaturas_grupo,
+                alumno__grupo=grupo_seleccionado
+            ).distinct()
             print(usuarios_inscritos)
         
         except (ValueError, Grupo.DoesNotExist):
@@ -160,24 +163,28 @@ def usuarios_inscritos_grupo(request):
 @login_required
 def generar_archivo_txt(request, grupo_clave):
     grupo_seleccionado = Grupo.objects.get(clave_grupo=grupo_clave)
-    # Obtenemos la clave de la asignatura de los parámetros de la URL
-    clave_asignatura = request.GET.get('asignatura')
-    asignatura_especifica = grupo_seleccionado.asignaturas.get(
-        clave_asignatura=clave_asignatura)
-    usuarios_inscritos = User.objects.filter(
-        alumno__asignatura=asignatura_especifica).distinct()
-
     contenido = ""
 
-    for usuario in usuarios_inscritos:
+    # Iterar sobre todas las asignaturas del grupo seleccionado
+    for asignatura in grupo_seleccionado.asignaturas.all():
         # Aseguramos que la clave de la asignatura tenga siempre 4 dígitos con ceros a la izquierda
-        clave_asignatura_padded = str(asignatura_especifica.clave_asignatura).zfill(4)
+        clave_asignatura_padded = str(asignatura.clave_asignatura).zfill(4)
         clave_grupo_padded = str(grupo_seleccionado.clave_grupo).zfill(4)
-        linea = f"{usuario.numero_cuenta}2253{clave_asignatura_padded}{clave_grupo_padded}A\n"
-        contenido += linea
+        
+        # Obtener todos los usuarios inscritos en la asignatura actual
+        usuarios_inscritos = User.objects.filter(
+            alumno__asignatura=asignatura,
+            alumno__grupo=grupo_seleccionado
+        ).distinct()
 
+        # Generar una línea para cada usuario inscrito en la asignatura
+        for usuario in usuarios_inscritos:
+            linea = f"{usuario.numero_cuenta}2253{clave_asignatura_padded}{clave_grupo_padded}A\n"
+            contenido += linea
+
+    # Configurar la respuesta para la descarga del archivo
     response = HttpResponse(content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="alumnos_grupo.txt"'
+    response['Content-Disposition'] = 'attachment; filename="alumnos_grupo_general.txt"'
     response.write(contenido)
 
     return response
