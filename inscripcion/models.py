@@ -55,6 +55,7 @@ class Grupo(models.Model):
     )
     semestre = models.PositiveSmallIntegerField(choices= opciones)
     asignaturas = models.ManyToManyField(Asignatura,related_name='asignaturas')
+    
  
 
     def __str__(self):
@@ -84,6 +85,8 @@ class Inscripcion(models.Model):
     numero_cuenta = models.OneToOneField(User,on_delete=models.CASCADE, related_name='alumno')
     asignatura = models.ManyToManyField(Asignatura, blank=False)
     periodo = models.ForeignKey(Periodo, on_delete=models.CASCADE, default=1)  # Asigna el id de un periodo existente
+    grupo = models.ManyToManyField(Grupo, related_name='inscripciones')  # Mantener ManyToManyField
+
 
     class Meta:
         verbose_name = 'Inscripcion'

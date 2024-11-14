@@ -8,7 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.core.exceptions import ObjectDoesNotExist
-from inscripcion.models import Inscripcion, Asignatura, Periodo
+from inscripcion.models import Grupo, Inscripcion, Asignatura, Periodo
 
 
 from django.shortcuts import render, redirect
@@ -186,35 +186,57 @@ def carga_users(request):
                                 messages.success(request, f'El usuario {first_name} {last_name} ha sido registrado exitosamente con la contraseña inicial: {contrasena_inicial}')
 
                 # Procesar materias e inscripciones por cada alumno
-                alumnos_materias = []
+                alumnos_materias_grupos = []
                 materias_actuales = []
+                grupos = []
+                
 
                 # Construir el mapeo de alumnos a sus materias desde el archivo
                 for hoja in archivo.worksheets:  # Iterar sobre todas las hojas
                     for fila in hoja.iter_rows(min_row=2, values_only=True):
                         if fila[1] is not None:
                             if materias_actuales:
-                                alumnos_materias.append((numero_cuenta, materias_actuales))
+                                alumnos_materias_grupos.append((numero_cuenta, materias_actuales, grupos))
                             numero_cuenta = fila[1]
                             materias_actuales = []
+                            grupos = []  # Reiniciar la lista de grupos para el siguiente alumno
+                            
                         clave_asignatura = fila[3]
                         if clave_asignatura is not None:
                             materias_actuales.append(clave_asignatura)
 
+                        clave_grupo = fila[5]
+                        if clave_grupo is not None and clave_grupo not in grupos:
+                            grupos.append(clave_grupo)
+                        
+
                 # Añadir la última lista de materias si no está vacía
                 if materias_actuales:
-                    alumnos_materias.append((numero_cuenta, materias_actuales))
+                    alumnos_materias_grupos.append((numero_cuenta, materias_actuales, grupos))
+                            
+                print(f"Alumnos y materias: {alumnos_materias_grupos}")
+
+
+
                 
-                print(f'Meterias inscritas: {alumnos_materias}')
+                
+            
+
 
                 # Registrar las inscripciones
-                for numero_cuenta, materias in alumnos_materias:
+                for numero_cuenta, materias, grupos in alumnos_materias_grupos:
                     try:
                         user = User.objects.get(numero_cuenta=numero_cuenta)
                         inscripcion, created = Inscripcion.objects.get_or_create(numero_cuenta=user, periodo=periodo)
                         for clave_asignatura in materias:
                             asignatura = Asignatura.objects.get(clave_asignatura=clave_asignatura)
                             inscripcion.asignatura.add(asignatura)
+                        for clave_grupo in grupos:
+                            grupo = Grupo.objects.get(clave_grupo=clave_grupo)
+                            inscripcion.grupo.add(grupo)
+                         
+
+
                         messages.success(request, f'Materias inscritas para el alumno {user.first_name} {user.last_name}.')
                     except User.DoesNotExist:
                         messages.error(request, f'Error: El usuario con número de cuenta {numero_cuenta} no existe.')

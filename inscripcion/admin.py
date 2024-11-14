@@ -26,27 +26,28 @@ class SemestreFilter(admin.SimpleListFilter):
             return inscripciones_filtradas
 
 class InscripcionAdmin(admin.ModelAdmin):
-    list_display = ('get_apellido', 'get_nombre', 'get_asignaturas')
+    list_display = ('get_apellido', 'get_nombre', 'get_asignaturas', 'get_grupos')
 
     def get_apellido(self, obj):
         return obj.numero_cuenta.last_name
-
     get_apellido.short_description = 'Apellido'
     get_apellido.admin_order_field = 'numero_cuenta__last_name'
 
     def get_nombre(self, obj):
         return obj.numero_cuenta.first_name
-
     get_nombre.short_description = 'Nombre'
     get_nombre.admin_order_field = 'numero_cuenta__first_name'
 
     def get_asignaturas(self, obj):
         return ", ".join([asignatura.denominacion for asignatura in obj.asignatura.all()])
-
     get_asignaturas.short_description = 'Asignaturas'
 
-    list_filter = (SemestreFilter,)  # Agregamos el filtro por semestre aquí
+    def get_grupos(self, obj):
+        # Iterar sobre los grupos y obtener el atributo clave de cada uno
+        return ", ".join([str(grupo.clave_grupo) for grupo in obj.grupo.all()])
+    get_grupos.short_description = 'Grupos'
 
+    list_filter = (SemestreFilter,)
     actions = ['inscribir_usuarios']
 
     def inscribir_usuarios(self, request, queryset):
@@ -59,13 +60,10 @@ class InscripcionAdmin(admin.ModelAdmin):
             inscripcion.asignatura.set(asignaturas_a_inscribir)
 
         self.message_user(request, f"Se ha realizado la inscripción para {queryset.count()} usuarios.")
-
     inscribir_usuarios.short_description = "Inscribir usuarios seleccionados"
 
-    ordering = ['numero_cuenta__last_name']  # Ordenar por apellido de la A a la Z
+    ordering = ['numero_cuenta__last_name']
 
 admin.site.register(Inscripcion, InscripcionAdmin)
 admin.site.register(Asignatura)
 admin.site.register(Grupo)
-
-
