@@ -437,10 +437,11 @@ def generar_comprobante(request, alumno_id):
 def validacion_alumno(request, alumno_id):
     try:
         alumno_info = User.objects.get(numero_cuenta=alumno_id)
+        periodo = Periodo.objects.get(activo=True)
     except User.DoesNotExist:
         return HttpResponse("Alumno no encontrado", status=404)
     
 
     asignaturas_inscritas = Asignatura.objects.filter(inscripcion__numero_cuenta=alumno_info)
 
-    return render(request, 'validacion_alumno_template.html', {'alumno_info': alumno_info,})
+    return render(request, 'validacion_alumno_template.html', {'alumno_info': alumno_info,},{periodo: periodo})

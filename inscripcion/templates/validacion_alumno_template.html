@@ -77,11 +77,10 @@
     <h1>Información del Alumno</h1>
 
     <p>
-      <strong>ALUMNA/O:</strong> {{ alumno_info.first_name }} {{
-      alumno_info.last_name }}
+      <strong>ALUMNA/O:</strong> {{ alumno_info.first_name }} {{alumno_info.last_name }}
     </p>
     <p><strong>Número de cuenta:</strong> {{alumno_info.numero_cuenta }}</p>
     <p><strong>Semestre:</strong> {{alumno_info.semestre_actual }}</p>
-    <p><strong>Inscrito en el Semestre :</strong> 2024 - 2</p>
+    <p><strong>Inscrito en el Semestre :</strong> {{periodo}}</p>
   </body>
 </html>
