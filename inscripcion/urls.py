@@ -15,7 +15,6 @@ urlpatterns = [
     path('grupos/',views.usuarios_inscritos_grupo, name='usuarios_inscritos_grupo'),
     path('generar_archivo_txt/<int:grupo_clave>/', views.generar_archivo_txt, name='generar_archivo_txt'),
     path('generar_comprobante/<str:alumno_id>/', views.generar_comprobante, name='generar_comprobante'),
-    path('faltantes/', views.alumnos_faltantes, name='alumnos_faltantes'),
     path('validacion_alumno/<int:alumno_id>/', views.validacion_alumno, name='validacion_alumno'),
 
 ]

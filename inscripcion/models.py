@@ -86,7 +86,7 @@ class Inscripcion(models.Model):
     asignatura = models.ManyToManyField(Asignatura, blank=False)
     periodo = models.ForeignKey(Periodo, on_delete=models.CASCADE, default=1)  # Asigna el id de un periodo existente
     grupo = models.ManyToManyField(Grupo, related_name='inscripciones')  # Mantener ManyToManyField
-    comprobante_descargado = models.BooleanField(default=False)
+    
 
 
     class Meta:
