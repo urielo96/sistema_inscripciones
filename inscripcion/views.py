@@ -56,6 +56,7 @@ def index(request):
     mostrar_boton_comprobante = False
 
     return render(request, "index.html", context={
+        alumno: alumno,
         'cursos_listados': cursos_listados,
         'asignaturas_inscritas': asignaturas_inscritas,
         'mostrar_boton_comprobante': mostrar_boton_comprobante,
@@ -434,14 +435,25 @@ def generar_comprobante(request, alumno_id):
     return response
 
 
+
 def validacion_alumno(request, alumno_id):
     try:
-        alumno_info = User.objects.get(numero_cuenta=alumno_id)
-        periodo = Periodo.objects.get(activo=True)
+        alumno_info = get_object_or_404(User, numero_cuenta=alumno_id)
+        
+        try:
+            periodo = Periodo.objects.get(activo=True)
+        except Periodo.DoesNotExist:
+            return HttpResponse("No hay periodo activo", status=404)
+        
+        asignaturas_inscritas = Asignatura.objects.filter(inscripcion__numero_cuenta=alumno_info.numero_cuenta)
+        
     except User.DoesNotExist:
         return HttpResponse("Alumno no encontrado", status=404)
-    
 
-    asignaturas_inscritas = Asignatura.objects.filter(inscripcion__numero_cuenta=alumno_info)
+    context = {
+        'alumno_info': alumno_info,
+        'periodo': periodo,
+        'asignaturas_inscritas': asignaturas_inscritas,
+    }
 
-    return render(request, 'validacion_alumno_template.html', {'alumno_info': alumno_info,},{periodo: periodo})
+    return render(request, 'validacion_alumno_template.html', context)
