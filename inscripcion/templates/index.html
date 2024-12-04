@@ -1,76 +1,62 @@
-{% extends 'base.html' %} {% block title %}Sistema de Inscripciones ENaCif
-{%endblock title %} {% block body %}
-<br />
-<div class="d-flex align-items-center justify-content-center">
-  <h1>Sistema de Inscripciones ENaCIF</h1>
-</div>
-<br />
-<div class="card">
-  
-  <div class="card-header">Alumnos : {{user.first_name}} {{user.last_name}}</div>
-  <div class="card-header">Asignaturas Inscritas perido : {{periodo}}</div>
-  <div class="card-body">
-    <h4 class="card-title">Asignaturas</h4>
-    <div class="table-responsive">
-      <table class="table table-primary">
-        <thead>
-          <tr>
-            <th scope="col">CLAVE</th>
-            <th scope="col">NOMBRE</th>
-            <th scope="col">CREDITOS</th>
-            <th scope="col">CARACTER</th>
-            <!-- <th scope="col">GRUPO</th>-->
-          </tr>
-        </thead>
-        <tbody>
-          {% for asignatura in asignaturas_inscritas %}
-          <tr class="">
-            <td scope="row">
-              {% if asignatura.clave_asignatura|length < 4 %}0{% endif %}{{asignatura.clave_asignatura }}
-            </td>
+{% extends 'base.html' %} 
+{% block title %}Sistema de Inscripciones ENaCIF{% endblock title %} 
 
-            <td>{{ asignatura.denominacion }}</td>
-            <td>{{ asignatura.creditos }}</td>
-            <td>{{ asignatura.get_caracter_display }}</td>
-            <!-- <td>
-                                {% for inscripcion in asignatura.inscripcion_set.all %}
-                                    {% for grupo in inscripcion.grupo.all %}
-                                        {{ grupo }}
-                                        {% if not forloop.last %}, {% endif %}
-                                    {% endfor %}
-                                {% endfor %}
-                            </td>-->
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+{% block body %}
+<div class="container py-5">
+  <div class="text-center mb-4">
+    <h1 class="display-4">Sistema de Inscripciones ENaCIF</h1>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <strong>Alumno: {{ user.first_name }} {{ user.last_name }}</strong> 
     </div>
-    <div>
-      Da click en el boton de Aceptar para generar tu comprobate de inscripción
+    <div class="card-header bg-secondary text-white">
+      <strong>Asignaturas Inscritas - Periodo: {{ periodo }}</strong> 
     </div>
-    <br />
-    <button id="btnAceptar" class="btn btn-primary">Aceptar</button>
-    <div id="comprobante" style="display: none">
-      <!-- ... -->
-      <form
-        method="post"
-        action="{% url 'generar_comprobante' alumno_id=user.numero_cuenta %}"
-      >
-        {% csrf_token %}
-        <input
-          type="hidden"
-          name="alumno_id"
-          value="{{ user.numero_cuenta }}"
-        />
-        <button type="submit" class="btn btn-secondary">
-          Generar Comprobante
-        </button>
-      </form>
-      <!-- ... -->
+    <div class="card-body">
+      <h4 class="card-title mb-4">Asignaturas</h4>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-dark">
+            <tr>
+              <th scope="col">Clave</th>
+              <th scope="col">Nombre</th>
+              <th scope="col">Créditos</th>
+              <th scope="col">Carácter</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for asignatura in asignaturas_inscritas %}
+            <tr>
+              <td>
+                {% if asignatura.clave_asignatura|length < 4 %}0{% endif %}{{ asignatura.clave_asignatura }}
+              </td>
+              <td>{{ asignatura.denominacion }}</td>
+              <td>{{ asignatura.creditos }}</td>
+              <td>{{ asignatura.get_caracter_display }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-4">Haz clic en el botón "Aceptar" para generar tu comprobante de inscripción.</p>
+      <button id="btnAceptar" class="btn btn-success btn-lg">Aceptar</button>
+      <div id="comprobante" style="display: none;">
+        <form method="post" action="{% url 'generar_comprobante' alumno_id=user.numero_cuenta %}">
+          {% csrf_token %}
+          <input type="hidden" name="alumno_id" value="{{ user.numero_cuenta }}">
+          <button type="submit" class="btn btn-secondary btn-lg mt-3">
+            <i class="fas fa-file-pdf"></i> Generar Comprobante
+          </button>
+        </form>
+      </div>
+    </div>
+    <div class="card-footer text-center bg-dark text-white">
+      ENaCIF - {{ periodo }}
     </div>
   </div>
 </div>
-<div class="card-footer text-muted">ENaCIF</div>
 
 <script>
   document.getElementById("btnAceptar").addEventListener("click", function () {

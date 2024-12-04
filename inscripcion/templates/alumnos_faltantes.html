@@ -1,0 +1,22 @@
+<!-- alumnos_faltantes.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alumnos Faltantes</title>
+</head>
+<body>
+    <h1>Alumnos Faltantes por Descargar Comprobante - {{ periodo.nombre }}</h1>
+    
+    {% if faltantes %}
+        <ul>
+            {% for inscripcion in faltantes %}
+                <li>{{ inscripcion.alumno.first_name }} {{ inscripcion.alumno.last_name }} - {{ inscripcion.alumno.numero_cuenta }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>¡Todos los alumnos han descargado su comprobante!</p>
+    {% endif %}
+</body>
+</html>

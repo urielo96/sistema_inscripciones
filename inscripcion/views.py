@@ -435,6 +435,12 @@ def generar_comprobante(request, alumno_id):
     return response
 
 
+def alumnos_faltantes(request):
+    periodo_actual = Periodo.objects.get(activo=True)  # O ajusta según tu lógica para identificar el periodo
+    faltantes = Inscripcion.objects.filter(periodo=periodo_actual, comprobante_descargado=False)
+    
+    return render(request, 'alumnos_faltantes.html', {'faltantes': faltantes, 'periodo': periodo_actual})
+
 
 def validacion_alumno(request, alumno_id):
     try:
