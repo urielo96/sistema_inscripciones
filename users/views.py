@@ -86,7 +86,7 @@ def carga_users(request):
 
                 for hoja in archivo.worksheets:  # Iterar sobre todas las hojas
                     for fila in hoja.iter_rows(min_row=2, values_only=True):  # Iterar sobre todas las filas
-                        print(f'Procesando la hoja {hoja.title}...')
+                        
                         
                         semestre = {
                             '1': 1,
@@ -206,8 +206,13 @@ def carga_users(request):
                             materias_actuales.append(clave_asignatura)
 
                         clave_grupo = fila[5]
-                        if clave_grupo is not None and clave_grupo not in grupos:
-                            grupos.append(clave_grupo)
+                        if clave_grupo is not None:
+                            try:
+                                clave_grupo = int(clave_grupo)  # Intentar convertir a entero
+                            except ValueError:
+                                pass  # Si no se puede convertir, mantener el valor original
+                            if clave_grupo not in grupos:
+                                grupos.append(clave_grupo)
                         
 
                 # Añadir la última lista de materias si no está vacía
@@ -232,8 +237,11 @@ def carga_users(request):
                             asignatura = Asignatura.objects.get(clave_asignatura=clave_asignatura)
                             inscripcion.asignatura.add(asignatura)
                         for clave_grupo in grupos:
-                            grupo = Grupo.objects.get(clave_grupo=clave_grupo)
-                            inscripcion.grupo.add(grupo)
+                            try:
+                                grupo = Grupo.objects.get(clave_grupo=clave_grupo)
+                                inscripcion.grupo.add(grupo)
+                            except Grupo.DoesNotExist:
+                                messages.error(request, f'Error: El grupo con clave {clave_grupo} no existe.')
                          
 
 
