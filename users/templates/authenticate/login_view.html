@@ -27,11 +27,13 @@
 <div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
   <div class="col-md-6 p-4 floating-div">
     {% if messages %}
-      <div class="alert alert-danger" role="alert">
-        {% for message in messages %}
-          <p class="mb-1">{{ message }}</p>
-        {% endfor %}
-      </div>
+      {% for message in messages %}
+        {% if message.tags == 'error' %}
+          <div class="alert alert-danger" role="alert">
+            <p class="mb-1">{{ message }}</p>
+          </div>
+        {% endif %}
+      {% endfor %}
     {% endif %}
     
     <h3 class="text-center mb-4" style="color: aliceblue;">Iniciar Sesión</h3>

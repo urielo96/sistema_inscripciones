@@ -1,5 +1,7 @@
 from django.db import models
 from users.models import User
+import json
+from django.utils import timezone
 
 
 class Asignatura(models.Model):
@@ -97,6 +99,61 @@ class Inscripcion(models.Model):
 
     def __str__(self):
         return str(self.numero_cuenta)
+
+
+class HistorialInscripcion(models.Model):
+    """Modelo para mantener un historial completo de todas las inscripciones"""
+    id = models.AutoField(primary_key=True)
+    numero_cuenta = models.ForeignKey(User, on_delete=models.CASCADE, related_name='historial_inscripciones')
+    periodo = models.ForeignKey(Periodo, on_delete=models.CASCADE)
+    fecha_inscripcion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+    activa = models.BooleanField(default=True, help_text="Indica si esta inscripción está activa o fue reemplazada")
+    
+    # Campos para guardar snapshot de las materias y grupos al momento de la inscripción
+    asignaturas_snapshot = models.TextField(blank=True, help_text="JSON con las asignaturas inscritas")
+    grupos_snapshot = models.TextField(blank=True, help_text="JSON con los grupos asignados")
+    
+    class Meta:
+        verbose_name = 'Historial de Inscripción'
+        verbose_name_plural = 'Historial de Inscripciones'
+        ordering = ['-fecha_inscripcion']
+    
+    def __str__(self):
+        return f"{self.numero_cuenta} - {self.periodo} - {self.fecha_inscripcion.strftime('%d/%m/%Y %H:%M')}"
+    
+    def guardar_en_historial(self):
+        """Guarda la inscripción actual en el historial antes de modificarla"""
+        # Desactivar inscripciones anteriores del mismo período
+        HistorialInscripcion.objects.filter(
+            numero_cuenta=self.numero_cuenta,
+            periodo=self.periodo
+        ).update(activa=False)
         
-
-
+        # Crear snapshot de asignaturas y grupos
+        asignaturas_data = []
+        for asignatura in self.asignatura.all():
+            asignaturas_data.append({
+                'clave': asignatura.clave_asignatura,
+                'denominacion': asignatura.denominacion,
+                'semestre': asignatura.semestre,
+                'creditos': asignatura.creditos
+            })
+        
+        grupos_data = []
+        for grupo in self.grupo.all():
+            grupos_data.append({
+                'clave': grupo.clave_grupo,
+                'semestre': grupo.semestre
+            })
+        
+        # Crear registro en el historial
+        historial = HistorialInscripcion.objects.create(
+            numero_cuenta=self.numero_cuenta,
+            periodo=self.periodo,
+            asignaturas_snapshot=json.dumps(asignaturas_data, ensure_ascii=False),
+            grupos_snapshot=json.dumps(grupos_data, ensure_ascii=False),
+            activa=True
+        )
+        
+        return historial

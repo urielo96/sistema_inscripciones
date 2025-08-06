@@ -3,6 +3,8 @@ from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
     numero_cuenta = models.CharField(max_length=10, unique=True, null=False)
+    email_requerido = models.EmailField(max_length=254, blank=True, null=True, help_text="Email del alumno")
+    email_completado = models.BooleanField(default=False, help_text="Indica si el alumno ya proporcionó su email")
     opciones = (
         (1, 'Primer Semestre'),
         (2, 'Segundo Semestre'),

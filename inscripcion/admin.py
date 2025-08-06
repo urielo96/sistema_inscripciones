@@ -1,8 +1,7 @@
-
 from django.contrib import admin
 from users.models import User  # Asegúrate de importar el modelo User de la aplicación 'users'
 from django.contrib import admin
-from inscripcion.models import Inscripcion, Grupo, Asignatura
+from inscripcion.models import Inscripcion, Grupo, Asignatura, HistorialInscripcion
 
 
 
@@ -67,3 +66,30 @@ class InscripcionAdmin(admin.ModelAdmin):
 admin.site.register(Inscripcion, InscripcionAdmin)
 admin.site.register(Asignatura)
 admin.site.register(Grupo)
+
+class HistorialInscripcionAdmin(admin.ModelAdmin):
+    list_display = ['numero_cuenta', 'periodo', 'fecha_inscripcion', 'activa', 'get_asignaturas_count', 'get_grupos_count']
+    list_filter = ['activa', 'periodo', 'fecha_inscripcion']
+    search_fields = ['numero_cuenta__numero_cuenta', 'numero_cuenta__first_name', 'numero_cuenta__last_name']
+    readonly_fields = ['fecha_inscripcion', 'fecha_modificacion', 'asignaturas_snapshot', 'grupos_snapshot']
+    ordering = ['-fecha_inscripcion']
+    
+    def get_asignaturas_count(self, obj):
+        import json
+        try:
+            data = json.loads(obj.asignaturas_snapshot)
+            return len(data)
+        except:
+            return 0
+    get_asignaturas_count.short_description = 'Asignaturas'
+    
+    def get_grupos_count(self, obj):
+        import json
+        try:
+            data = json.loads(obj.grupos_snapshot)
+            return len(data)
+        except:
+            return 0
+    get_grupos_count.short_description = 'Grupos'
+
+admin.site.register(HistorialInscripcion, HistorialInscripcionAdmin)

@@ -1,4 +1,4 @@
-from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.decorators import user_passes_test, login_required
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
@@ -8,7 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.core.exceptions import ObjectDoesNotExist
-from inscripcion.models import Grupo, Inscripcion, Asignatura, Periodo
+from inscripcion.models import Grupo, Inscripcion, Asignatura, Periodo, HistorialInscripcion
 
 
 from django.shortcuts import render, redirect
@@ -16,8 +16,9 @@ from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 
-from . forms import Carga_alumnos
+from . forms import Carga_alumnos, EmailForm
 import openpyxl
+import re
 from django.contrib.auth.hashers import make_password
 from .models import User
 from django.shortcuts import render
@@ -48,16 +49,24 @@ def login_users(request):
             if user.groups.filter(name='Administrativos').exists():
                 return redirect('usuarios_inscritos_grupo')
 
+            # Verificar si el usuario ya proporcionó su email
+            if not user.email_completado:
+                return redirect('capturar_email')
+
             return redirect('index')
         else:
             messages.error(request, 'Número de Cuenta o contraseña inválidos')
 
-    return render(request, 'authenticate/login_view.html', {'messages': messages.get_messages(request)})
+    return render(request, 'authenticate/login_view.html')
 
 
 def logout_users(request):
+    # Limpiar los mensajes antes del logout para evitar que aparezcan en el login
+    storage = messages.get_messages(request)
+    for message in storage:
+        pass  # Esto consume los mensajes
+    
     logout(request)
-    # Lógica adicional después del cierre de sesión
     return redirect('login')
 
 
@@ -70,6 +79,7 @@ def vista_administrador(request):
     # Código de la vista para el administrador aquí
     return render(request, 'authenticate/inscripcion.html', {'messages': messages.get_messages(request)})
     
+
 
 def carga_users(request):
     periodos = Periodo.objects.all()  # Obtener todos los períodos disponibles
@@ -263,8 +273,6 @@ def carga_users(request):
 
 
 
-
-
 def crear_periodo(request):
     if request.method == 'POST':
         if 'periodo_id' in request.POST:
@@ -297,3 +305,71 @@ def crear_periodo(request):
 
     periodos = Periodo.objects.all()
     return render(request, 'crear_periodo.html', {'periodos': periodos})
+
+
+@login_required
+def capturar_email(request):
+    """Vista para capturar el email del alumno antes de acceder a sus asignaturas"""
+    # Verificar que el usuario ya esté autenticado
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    # Si ya completó el email, redirigir al index
+    if request.user.email_completado:
+        return redirect('index')
+    
+    if request.method == 'POST':
+        form = EmailForm(request.POST, instance=request.user)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.email_completado = True
+            user.save()
+            # Redirigir directamente sin mensaje para evitar que aparezca en logout
+            return redirect('index')
+        else:
+            messages.error(request, 'Por favor, corrije los errores en el formulario.')
+    else:
+        form = EmailForm(instance=request.user)
+    
+    return render(request, 'authenticate/capturar_email.html', {'form': form})
+
+@user_passes_test(es_administrador)
+def ver_historial_inscripciones(request):
+    """Vista para que los administradores vean el historial completo de inscripciones"""
+    historial = HistorialInscripcion.objects.all().select_related('numero_cuenta', 'periodo')
+    
+    # Filtros opcionales
+    numero_cuenta_filtro = request.GET.get('numero_cuenta')
+    periodo_filtro = request.GET.get('periodo')
+    
+    if numero_cuenta_filtro:
+        historial = historial.filter(numero_cuenta__numero_cuenta__icontains=numero_cuenta_filtro)
+    
+    if periodo_filtro:
+        historial = historial.filter(periodo__codigo=periodo_filtro)
+    
+    periodos = Periodo.objects.all()
+    
+    context = {
+        'historial': historial,
+        'periodos': periodos,
+        'numero_cuenta_filtro': numero_cuenta_filtro,
+        'periodo_filtro': periodo_filtro,
+    }
+    
+    return render(request, 'historial_inscripciones.html', context)
+
+def extraer_periodo_del_archivo(nombre_archivo):
+    """
+    Extrae el período del nombre del archivo.
+    Detecta patrones como: 2016-1, 2024-2, etc.
+    """
+    import re
+    
+    # Buscar patrón YYYY-N en el nombre del archivo
+    patron_periodo = re.search(r'(\d{4})-([12])', nombre_archivo)
+    
+    if patron_periodo:
+        return patron_periodo.group(0)  # Retorna "2016-1", "2024-2", etc.
+    
+    return None

@@ -39,6 +39,11 @@ def is_alumno(user):
 def index(request):
     # Obtener el alumno actualmente autenticado desde la sesión
     alumno = request.user
+    
+    # Verificar si el alumno ya proporcionó su email
+    if not alumno.email_completado:
+        return redirect('capturar_email')
+    
     numero_cuenta = alumno.numero_cuenta
     
     periodo = Periodo.objects.get(activo=True)
